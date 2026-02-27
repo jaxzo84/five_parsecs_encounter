@@ -5,275 +5,432 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Five Parsecs from Home — Encounter Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
+/* ── DARK THEME (default) ─────────────────────────────────────── */
 :root {
-  --bg:       #0d0f14;
-  --surf:     #13161e;
-  --surf2:    #1c2030;
-  --border:   #2a3045;
-  --border2:  #3a4560;
-  --gold:     #d4a84b;
-  --gold2:    #e8c06a;
-  --red:      #c0392b;
-  --teal:     #2e7d7a;
-  --text:     #d8dce8;
-  --text2:    #8a90a8;
-  --text3:    #5a6080;
-  --fh:       'Bebas Neue', sans-serif;
-  --fb:       'Barlow', sans-serif;
-  --fc:       'Barlow Condensed', sans-serif;
-  --fm:       'Share Tech Mono', monospace;
+  --bg:      #0d0f14;
+  --surf:    #13161e;
+  --surf2:   #1c2030;
+  --border:  #2a3045;
+  --border2: #3a4560;
+  --gold:    #d4a84b;
+  --gold2:   #e8c06a;
+  --red:     #c0392b;
+  --teal:    #2e7d7a;
+  --teal2:   #5ab8b4;
+  --text:    #d8dce8;
+  --text2:   #b0b8cc;
+  --text3:   #7a84a0;
+  --fh: 'Bebas Neue', sans-serif;
+  --fb: 'Barlow', sans-serif;
+  --fc: 'Barlow Condensed', sans-serif;
+  --fm: 'Share Tech Mono', monospace;
+  --font-size-base: 1rem;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:.9rem;line-height:1.5;min-height:100vh}
 
-/* HEADER */
-#hdr{background:var(--surf);border-bottom:2px solid var(--gold);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.logo-t{font-family:var(--fh);font-size:2rem;color:var(--gold);letter-spacing:2px;line-height:1}
-.logo-s{font-family:var(--fm);font-size:.62rem;color:var(--text3);letter-spacing:4px}
-.hdr-btns{display:flex;gap:.5rem;flex-wrap:wrap}
+/* ── HIGH CONTRAST THEME ──────────────────────────────────────── */
+body.hc {
+  --bg:      #f5f0e8;
+  --surf:    #ede8e0;
+  --surf2:   #e0dbd0;
+  --border:  #999080;
+  --border2: #887860;
+  --gold:    #7a5800;
+  --gold2:   #5a3e00;
+  --red:     #8b0000;
+  --teal:    #005050;
+  --teal2:   #003838;
+  --text:    #1a1a14;
+  --text2:   #2a2820;
+  --text3:   #3a3830;
+  --fh: 'Bebas Neue', sans-serif;
+}
+body.hc .logo-t { color: var(--gold); }
+body.hc .enc-title { color: var(--gold2); }
+body.hc .enemy-name { color: #1a1a14; }
+body.hc .es-v, body.hc .stat-val { color: var(--gold2); }
+body.hc .obj-name { color: var(--teal2); }
+body.hc .obj-card { background: rgba(0,80,80,.06); border-color: rgba(0,80,80,.3); }
+body.hc .sight-card { background: rgba(120,88,0,.06); border-color: rgba(120,88,0,.25); }
+body.hc .sight-name { color: var(--gold2); }
+body.hc .dep-card { background: rgba(139,0,0,.05); border-color: rgba(139,0,0,.2); }
+body.hc .dep-name { color: var(--red); }
+body.hc .special-rule { color: var(--gold2); }
+body.hc .ui-block { background: rgba(120,88,0,.05); border-color: rgba(120,88,0,.25); }
+body.hc .ui-name { color: var(--gold2); }
+body.hc .badge-gold { border-color: rgba(122,88,0,.5); color: var(--gold2); }
+body.hc .badge-teal { border-color: rgba(0,80,80,.5); color: var(--teal2); }
+body.hc .data-table tr:nth-child(even) td { background: rgba(0,0,0,.04); }
+body.hc .narrative { background: rgba(120,88,0,.05); border-left-color: var(--gold); }
+body.hc select option { background: var(--surf); color: var(--text); }
+body.hc .btn-roll { background: linear-gradient(135deg,#d0c8b0,#e8e0d0); color: var(--gold2); border-color: var(--gold2); }
+body.hc .btn-roll:hover { background: linear-gradient(135deg,#c0b898,#d8d0c0); }
+body.hc .controls-panel { border-bottom-color: var(--border2); }
+body.hc #hdr { border-bottom-color: var(--gold2); }
 
-/* LAYOUT */
-#app{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 65px);overflow:hidden}
-#sidebar{background:var(--surf);border-right:1px solid var(--border);overflow-y:auto;padding:1.5rem 1rem;display:flex;flex-direction:column;gap:1.5rem}
-#main{overflow-y:auto;padding:1.5rem 2rem}
+/* ── BASE ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: var(--font-size-base); }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--fb);
+  font-size: 1rem;
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background .25s, color .25s;
+}
 
-/* BUTTONS */
-.btn{font-family:var(--fc);font-size:.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:.5rem 1.1rem;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;transition:all .15s}
-.btn:hover{border-color:var(--gold);color:var(--gold)}
-.btn-p{background:var(--gold);color:#0d0f14;border-color:var(--gold)}
-.btn-p:hover{background:var(--gold2);color:#0d0f14}
-.btn-sm{padding:.28rem .7rem;font-size:.72rem}
-.btn-red{border-color:var(--red);color:var(--red)}
-.btn-red:hover{background:var(--red);color:#fff}
-.btn-roll{background:linear-gradient(135deg,#1a3a30,#0d0f14);border:1px solid var(--gold);color:var(--gold);font-family:var(--fh);font-size:1rem;letter-spacing:3px;padding:.65rem 2rem;cursor:pointer;transition:all .2s;width:100%;margin-top:.5rem}
-.btn-roll:hover{background:linear-gradient(135deg,#2a5a48,#1a3a30);box-shadow:0 0 18px rgba(212,168,75,.25)}
+/* ── HEADER ───────────────────────────────────────────────────── */
+#hdr {
+  background: var(--surf);
+  border-bottom: 2px solid var(--gold);
+  padding: .75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo-t { font-family: var(--fh); font-size: 1.7rem; color: var(--gold); letter-spacing: 2px; line-height: 1; }
+.logo-s { font-family: var(--fm); font-size: .62rem; color: var(--text3); letter-spacing: 3px; margin-top: 2px; }
+.hdr-right { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 
-/* FORMS */
-.sec-lbl{font-family:var(--fm);font-size:.62rem;color:var(--gold);letter-spacing:3px;text-transform:uppercase;margin-bottom:.6rem}
-.form-grp{display:flex;flex-direction:column;gap:3px;margin-bottom:.6rem}
-label.fl{font-family:var(--fm);font-size:.58rem;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
-select,input[type=number],input[type=text]{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--fb);font-size:.85rem;padding:.38rem .55rem;width:100%;transition:border-color .15s}
-select:focus,input:focus{outline:none;border-color:var(--gold)}
-select option{background:var(--surf)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+/* ── BUTTONS ──────────────────────────────────────────────────── */
+.btn {
+  font-family: var(--fc);
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: .45rem 1rem;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--gold); color: var(--gold); }
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn-hc {
+  border-color: var(--text3);
+  font-size: .8rem;
+  padding: .4rem .85rem;
+}
+.btn-hc.active { border-color: var(--gold); color: var(--gold); background: rgba(212,168,75,.1); }
+body.hc .btn-hc.active { background: rgba(122,88,0,.1); }
+.btn-export { border-color: var(--teal2); color: var(--teal2); }
+.btn-export:hover { background: var(--teal); color: #fff; border-color: var(--teal); }
+.btn-roll {
+  background: linear-gradient(135deg, #1a3a30, #0d0f14);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--fh);
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  padding: .7rem 2rem;
+  cursor: pointer;
+  transition: all .2s;
+  width: 100%;
+}
+.btn-roll:hover { background: linear-gradient(135deg,#2a5a48,#1a3a30); box-shadow: 0 0 18px rgba(212,168,75,.25); }
+.btn-roll:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-/* RESULT PANELS */
-.enc-panel{background:var(--surf);border:1px solid var(--border);margin-bottom:1rem}
-.enc-title{font-family:var(--fh);font-size:1.1rem;color:var(--gold);letter-spacing:2px;padding:.75rem 1rem .5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.enc-body{padding:1rem}
-.enc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.enc-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+/* ── CONTROLS PANEL (top) ────────────────────────────────────── */
+#controls {
+  background: var(--surf);
+  border-bottom: 2px solid var(--border);
+  padding: 1rem 1.25rem 1.25rem;
+}
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .75rem 1rem;
+  margin-bottom: 1rem;
+}
+.controls-section {
+  display: contents;
+}
+.controls-section-title {
+  grid-column: 1 / -1;
+  font-family: var(--fm);
+  font-size: .6rem;
+  color: var(--gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding-bottom: .3rem;
+  border-bottom: 1px solid var(--border);
+  margin-top: .5rem;
+}
+.form-grp { display: flex; flex-direction: column; gap: 4px; }
+label.fl {
+  font-family: var(--fm);
+  font-size: .65rem;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+select, input[type=number], input[type=text] {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--fb);
+  font-size: .95rem;
+  padding: .45rem .6rem;
+  width: 100%;
+  transition: border-color .15s;
+  border-radius: 2px;
+}
+select:focus, input:focus { outline: none; border-color: var(--gold); }
+select option { background: var(--surf); color: var(--text); }
 
-/* STAT BLOCKS */
-.stat-block{background:var(--bg);border:1px solid var(--border);padding:.75rem}
-.stat-title{font-family:var(--fm);font-size:.6rem;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:.5rem}
-.stat-val{font-family:var(--fh);font-size:1.5rem;color:var(--gold);letter-spacing:1px;line-height:1}
-.stat-sub{font-family:var(--fm);font-size:.65rem;color:var(--text2);margin-top:2px}
+/* ── RESULTS AREA (bottom) ───────────────────────────────────── */
+#main { padding: 1.25rem; max-width: 1100px; margin: 0 auto; }
 
-/* ENEMY BLOCK */
-.enemy-block{background:var(--bg);border:1px solid var(--border2);padding:1rem}
-.enemy-name{font-family:var(--fh);font-size:1.4rem;color:var(--text);letter-spacing:2px}
-.enemy-cat{font-family:var(--fm);font-size:.6rem;color:var(--teal);letter-spacing:2px;margin-bottom:.5rem}
-.enemy-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin:.6rem 0}
-.es-box{background:var(--surf2);border:1px solid var(--border);padding:.4rem;text-align:center}
-.es-lbl{font-family:var(--fm);font-size:.52rem;color:var(--text3);letter-spacing:1px}
-.es-v{font-family:var(--fh);font-size:1.1rem;color:var(--gold)}
-.enemy-special{font-family:var(--fm);font-size:.68rem;color:var(--text2);line-height:1.6;margin-top:.5rem;border-top:1px solid var(--border);padding-top:.5rem}
-.special-rule{color:var(--gold2)}
+/* ── RESULT PANELS ────────────────────────────────────────────── */
+.enc-panel { background: var(--surf); border: 1px solid var(--border); margin-bottom: 1rem; }
+.enc-title {
+  font-family: var(--fh);
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: 2px;
+  padding: .65rem 1rem .45rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.enc-body { padding: 1rem; }
+.enc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.enc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
+@media (max-width: 640px) {
+  .enc-grid, .enc-grid-3 { grid-template-columns: 1fr; }
+}
 
-/* BADGE/TAG */
-.badge{display:inline-block;font-family:var(--fm);font-size:.58rem;letter-spacing:1px;padding:2px 7px;border:1px solid;margin-right:4px;margin-bottom:3px}
-.badge-gold{border-color:rgba(212,168,75,.5);color:var(--gold)}
-.badge-red{border-color:rgba(192,57,43,.5);color:#e07060}
-.badge-teal{border-color:rgba(46,125,122,.5);color:#5ab8b4}
-.badge-dim{border-color:var(--border);color:var(--text3)}
+/* ── STAT BLOCKS ─────────────────────────────────────────────── */
+.stat-block { background: var(--bg); border: 1px solid var(--border); padding: .75rem; }
+.stat-title { font-family: var(--fm); font-size: .65rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: .4rem; }
+.stat-val { font-family: var(--fh); font-size: 1.5rem; color: var(--gold); letter-spacing: 1px; line-height: 1; }
+.stat-sub { font-family: var(--fm); font-size: .7rem; color: var(--text2); margin-top: 3px; }
 
-/* TABLES */
-.data-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.data-table th{font-family:var(--fm);font-size:.58rem;color:var(--text3);letter-spacing:2px;text-align:left;padding:.3rem .5rem;border-bottom:1px solid var(--border);background:var(--bg)}
-.data-table td{padding:.3rem .5rem;border-bottom:1px solid rgba(42,48,69,.4);vertical-align:top}
-.data-table tr:last-child td{border-bottom:none}
-.data-table tr:nth-child(even) td{background:rgba(28,32,48,.5)}
+/* ── ENEMY BLOCK ─────────────────────────────────────────────── */
+.enemy-block { background: var(--bg); border: 1px solid var(--border2); padding: 1rem; }
+.enemy-name { font-family: var(--fh); font-size: 1.6rem; color: var(--text); letter-spacing: 2px; }
+.enemy-cat { font-family: var(--fm); font-size: .65rem; color: var(--teal2); letter-spacing: 2px; margin-bottom: .5rem; }
+.enemy-stats { display: grid; grid-template-columns: repeat(5,1fr); gap: .4rem; margin: .6rem 0; }
+@media (max-width: 480px) { .enemy-stats { grid-template-columns: repeat(3,1fr); } }
+.es-box { background: var(--surf2); border: 1px solid var(--border); padding: .5rem .4rem; text-align: center; }
+.es-lbl { font-family: var(--fm); font-size: .6rem; color: var(--text3); letter-spacing: 1px; }
+.es-v { font-family: var(--fh); font-size: 1.15rem; color: var(--gold); }
+.enemy-special {
+  font-size: .85rem;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-top: .6rem;
+  border-top: 1px solid var(--border);
+  padding-top: .6rem;
+}
+.special-rule { color: var(--gold2); font-weight: 600; }
 
-/* OBJECTIVE CARD */
-.obj-card{background:linear-gradient(135deg,rgba(46,125,122,.1),rgba(28,32,48,0));border:1px solid rgba(46,125,122,.3);padding:1rem}
-.obj-name{font-family:var(--fh);font-size:1.4rem;color:#5ab8b4;letter-spacing:2px}
-.obj-desc{font-size:.82rem;color:var(--text2);line-height:1.6;margin-top:.4rem}
+/* ── BADGE ───────────────────────────────────────────────────── */
+.badge { display: inline-block; font-family: var(--fm); font-size: .65rem; letter-spacing: 1px; padding: 2px 8px; border: 1px solid; margin-right: 4px; margin-bottom: 3px; }
+.badge-gold { border-color: rgba(212,168,75,.5); color: var(--gold); }
+.badge-teal { border-color: rgba(46,125,122,.5); color: var(--teal2); }
 
-/* NOTABLE SIGHT */
-.sight-card{background:rgba(212,168,75,.05);border:1px solid rgba(212,168,75,.2);padding:.75rem}
-.sight-name{font-family:var(--fc);font-size:.95rem;font-weight:700;color:var(--gold)}
-.sight-desc{font-size:.8rem;color:var(--text2)}
+/* ── TABLES ──────────────────────────────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.data-table th { font-family: var(--fm); font-size: .62rem; color: var(--text3); letter-spacing: 2px; text-align: left; padding: .35rem .55rem; border-bottom: 1px solid var(--border); background: var(--bg); }
+.data-table td { padding: .35rem .55rem; border-bottom: 1px solid rgba(42,48,69,.4); vertical-align: top; color: var(--text2); }
+.data-table td:first-child { color: var(--text); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:nth-child(even) td { background: rgba(28,32,48,.5); }
 
-/* DEPLOYMENT CARD */
-.dep-card{background:rgba(192,57,43,.05);border:1px solid rgba(192,57,43,.2);padding:.75rem}
-.dep-name{font-family:var(--fc);font-size:.95rem;font-weight:700;color:#e07060}
-.dep-desc{font-size:.8rem;color:var(--text2)}
+/* ── OBJECTIVE CARD ──────────────────────────────────────────── */
+.obj-card { background: rgba(46,125,122,.08); border: 1px solid rgba(46,125,122,.3); padding: 1rem; }
+.obj-name { font-family: var(--fh); font-size: 1.5rem; color: var(--teal2); letter-spacing: 2px; }
+.obj-desc { font-size: .88rem; color: var(--text2); line-height: 1.7; margin-top: .4rem; }
 
-/* DIVIDER */
-hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
+/* ── NOTABLE SIGHT ───────────────────────────────────────────── */
+.sight-card { background: rgba(212,168,75,.05); border: 1px solid rgba(212,168,75,.2); padding: .85rem; }
+.sight-name { font-family: var(--fc); font-size: 1rem; font-weight: 700; color: var(--gold); }
+.sight-desc { font-size: .85rem; color: var(--text2); margin-top: .3rem; line-height: 1.6; }
 
-/* EMPTY */
-.empty{text-align:center;padding:4rem 1rem;color:var(--text3);font-family:var(--fm);font-size:.75rem;letter-spacing:2px}
-.empty h2{font-family:var(--fh);font-size:2.5rem;color:var(--border2);letter-spacing:4px;margin-bottom:.5rem}
+/* ── DEPLOYMENT CARD ─────────────────────────────────────────── */
+.dep-card { background: rgba(192,57,43,.05); border: 1px solid rgba(192,57,43,.2); padding: .85rem; }
+.dep-name { font-family: var(--fc); font-size: 1rem; font-weight: 700; color: #e07060; }
+.dep-desc { font-size: .85rem; color: var(--text2); margin-top: .3rem; line-height: 1.6; }
 
-/* NARRATIVE */
-.narrative{background:rgba(212,168,75,.04);border-left:3px solid var(--gold);padding:.75rem 1rem;font-family:var(--fb);font-size:.82rem;color:var(--text2);font-style:italic;line-height:1.7;margin-bottom:1rem}
+/* ── UI BLOCK ────────────────────────────────────────────────── */
+.ui-block { background: rgba(212,168,75,.06); border: 1px solid rgba(212,168,75,.25); padding: .85rem 1rem; margin-top: .75rem; }
+.ui-name { font-family: var(--fh); font-size: 1.2rem; color: var(--gold2); letter-spacing: 2px; }
+.ui-note { font-size: .75rem; color: var(--text3); margin-top: .4rem; }
 
-/* UNIQUE INDIVIDUAL */
-.ui-block{background:rgba(212,168,75,.06);border:1px solid rgba(212,168,75,.25);padding:.75rem 1rem;margin-top:.5rem}
-.ui-name{font-family:var(--fh);font-size:1.1rem;color:var(--gold2);letter-spacing:2px}
+/* ── MISC ────────────────────────────────────────────────────── */
+hr { border: none; border-top: 1px solid var(--border); margin: .75rem 0; }
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-family: var(--fm); font-size: .8rem; letter-spacing: 2px; }
+.empty h2 { font-family: var(--fh); font-size: 2.5rem; color: var(--border2); letter-spacing: 4px; margin-bottom: .5rem; }
+.sec-lbl { font-family: var(--fm); font-size: .65rem; color: var(--gold); letter-spacing: 3px; text-transform: uppercase; margin-bottom: .5rem; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn .3s ease; }
 
-/* SCROLL */
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--border2)}
+/* ── RESULT HEADER ───────────────────────────────────────────── */
+.result-header { margin-bottom: 1.25rem; padding-bottom: .75rem; border-bottom: 1px solid var(--border); }
+.result-title { font-family: var(--fh); font-size: 2rem; color: var(--text); letter-spacing: 3px; line-height: 1; }
+.result-meta { font-family: var(--fm); font-size: .7rem; color: var(--text3); letter-spacing: 2px; margin-top: 6px; }
 
-/* ANIM */
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fade-in{animation:fadeIn .3s ease}
-
-/* SECTION DIVIDER */
-.sec-divider{display:flex;align-items:center;gap:.75rem;margin:1.25rem 0 .75rem}
-.sec-divider span{font-family:var(--fh);font-size:.85rem;color:var(--text3);letter-spacing:3px;white-space:nowrap}
-.sec-divider::before,.sec-divider::after{content:'';flex:1;border-top:1px solid var(--border)}
-
-/* PRINT */
-@media print{
-  #hdr{display:none}
-  #app{display:block;height:auto;overflow:visible}
-  #sidebar{display:none}
-  #main{padding:0;overflow:visible}
-  .btn,.btn-roll,.btn-p{display:none}
-  .enc-panel{break-inside:avoid;border:1px solid #444;margin-bottom:12pt;background:#fff;color:#000}
-  .enc-title{color:#000;background:#eee;border-bottom:1px solid #888}
-  .enemy-name,.stat-val,.es-v,.obj-name{color:#000}
-  .es-box,.stat-block,.enemy-block,.obj-card,.dep-card,.sight-card,.ui-block{background:#f5f5f5;border-color:#999}
-  .enemy-special,.stat-sub,.es-lbl,.enemy-cat,.obj-desc,.dep-desc,.sight-desc{color:#444}
-  .badge{color:#333;border-color:#999}
-  .narrative{background:#f9f9f9;border-left:3px solid #aaa;color:#555}
-  .sec-divider{display:none}
+/* ── PRINT ───────────────────────────────────────────────────── */
+@media print {
+  #hdr, #controls { display: none !important; }
+  #main { padding: 0; }
+  .enc-panel { break-inside: avoid; border: 1px solid #888; margin-bottom: 10pt; background: #fff; color: #000; }
+  .enc-title { color: #000; background: #eee; }
+  .enemy-name, .stat-val, .es-v, .obj-name { color: #000; }
+  .es-box, .stat-block, .enemy-block, .obj-card, .dep-card, .sight-card, .ui-block { background: #f5f5f5; border-color: #aaa; }
+  .enemy-special, .stat-sub, .es-lbl, .enemy-cat, .obj-desc, .dep-desc, .sight-desc, .data-table td { color: #333; }
+  .special-rule { color: #555; font-weight: 700; }
+  .badge { color: #333; border-color: #999; }
 }
 </style>
 </head>
 <body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
 <header id="hdr">
   <div>
     <div class="logo-t">Five Parsecs from Home</div>
     <div class="logo-s">Encounter Generator — Third Edition</div>
   </div>
-  <div class="hdr-btns">
-    <button class="btn" onclick="window.print()">🖨 Print PDF</button>
-    <button class="btn btn-sm" onclick="exportTXT()">Export TXT</button>
+  <div class="hdr-right">
+    <button class="btn btn-hc" id="hc-btn" onclick="toggleHC()" title="Toggle high contrast mode">☀ High Contrast</button>
+    <button class="btn btn-export" onclick="exportPDF()">⬇ Export PDF</button>
+    <button class="btn btn-export" onclick="exportTXT()">⬇ Export TXT</button>
   </div>
 </header>
 
-<div id="app">
-  <aside id="sidebar">
-    <div>
-      <div class="sec-lbl">Mission Settings</div>
-      <div class="form-grp">
-        <label class="fl">Mission Type</label>
-        <select id="inp-mission">
-          <option value="opportunity">Opportunity</option>
-          <option value="patron">Patron</option>
-          <option value="rival">Rival Attack</option>
-          <option value="quest">Quest</option>
-          <option value="invasion">Invasion Battle</option>
-        </select>
-      </div>
-      <div class="form-grp">
-        <label class="fl">Crew Size in Field</label>
-        <select id="inp-crewsize">
-          <option value="6">6 (Standard — Roll 2D6, pick highest)</option>
-          <option value="5">5 (Roll 1D6)</option>
-          <option value="4">4 (Roll 2D6, pick lowest)</option>
-        </select>
-      </div>
-      <div class="form-grp">
-        <label class="fl">Difficulty Mode</label>
-        <select id="inp-diff">
-          <option value="normal">Normal</option>
-          <option value="easy">Easy</option>
-          <option value="challenging">Challenging</option>
-          <option value="hardcore">Hardcore</option>
-          <option value="insanity">Insanity</option>
-        </select>
-      </div>
+<!-- ── CONTROLS (top) ─────────────────────────────────────────── -->
+<section id="controls" aria-label="Mission configuration">
+  <div class="controls-grid">
+
+    <div class="controls-section-title">Mission Settings</div>
+
+    <div class="form-grp">
+      <label class="fl" for="inp-mission">Mission Type</label>
+      <select id="inp-mission">
+        <option value="opportunity">Opportunity</option>
+        <option value="patron">Patron</option>
+        <option value="rival">Rival Attack</option>
+        <option value="quest">Quest</option>
+        <option value="invasion">Invasion Battle</option>
+      </select>
     </div>
 
-    <div>
-      <div class="sec-lbl">Enemy Options</div>
-      <div class="form-grp">
-        <label class="fl">Enemy Category</label>
-        <select id="inp-ecat">
-          <option value="auto">Auto (roll D100)</option>
-          <option value="criminal">Criminal Elements</option>
-          <option value="hired">Hired Muscle</option>
-          <option value="interested">Interested Parties</option>
-          <option value="roving">Roving Threats</option>
-        </select>
-      </div>
-      <div class="form-grp">
-        <label class="fl">Specific Enemy Type</label>
-        <select id="inp-etype">
-          <option value="auto">Auto (roll on subtable)</option>
-        </select>
-      </div>
+    <div class="form-grp">
+      <label class="fl" for="inp-crewsize">Crew Size in Field</label>
+      <select id="inp-crewsize">
+        <option value="6">6 — Roll 2D6, pick highest</option>
+        <option value="5">5 — Roll 1D6</option>
+        <option value="4">4 — Roll 2D6, pick lowest</option>
+      </select>
     </div>
 
-    <div>
-      <div class="sec-lbl">Patron Details (optional)</div>
-      <div class="form-grp">
-        <label class="fl">Patron Type</label>
-        <select id="inp-patron">
-          <option value="">None / Unknown</option>
-          <option value="corporation">Corporation (+1 Danger Pay)</option>
-          <option value="local_gov">Local Government</option>
-          <option value="sector_gov">Sector Government</option>
-          <option value="wealthy">Wealthy Individual</option>
-          <option value="private">Private Organization</option>
-          <option value="secretive">Secretive Group (+1 Time Frame)</option>
-        </select>
-      </div>
+    <div class="form-grp">
+      <label class="fl" for="inp-diff">Difficulty Mode</label>
+      <select id="inp-diff">
+        <option value="normal">Normal</option>
+        <option value="easy">Easy</option>
+        <option value="challenging">Challenging</option>
+        <option value="hardcore">Hardcore</option>
+        <option value="insanity">Insanity</option>
+      </select>
     </div>
 
-    <div>
-      <div class="sec-lbl">Rival Info (if applicable)</div>
-      <div class="form-grp">
-        <label class="fl">Is Known Rival?</label>
-        <select id="inp-rivalknown">
-          <option value="no">No (generate random)</option>
-          <option value="yes">Yes (tracked down — Showdown)</option>
-        </select>
-      </div>
+    <div class="form-grp">
+      <label class="fl" for="inp-table">Battlefield Size</label>
+      <select id="inp-table">
+        <option value="2x2">2 × 2 feet</option>
+        <option value="2.5x2.5" selected>2.5 × 2.5 feet</option>
+        <option value="3x3">3 × 3 feet</option>
+      </select>
     </div>
 
-    <div>
-      <div class="sec-lbl">Table Size</div>
-      <div class="form-grp">
-        <label class="fl">Battlefield Size</label>
-        <select id="inp-table">
-          <option value="2x2">2 × 2 feet</option>
-          <option value="2.5x2.5" selected>2.5 × 2.5 feet</option>
-          <option value="3x3">3 × 3 feet</option>
-        </select>
-      </div>
+    <div class="controls-section-title">Enemy Options</div>
+
+    <div class="form-grp">
+      <label class="fl" for="inp-ecat">Enemy Category</label>
+      <select id="inp-ecat">
+        <option value="auto">Auto (roll D100)</option>
+        <option value="criminal">Criminal Elements</option>
+        <option value="hired">Hired Muscle</option>
+        <option value="interested">Interested Parties</option>
+        <option value="roving">Roving Threats</option>
+      </select>
     </div>
 
-    <button class="btn-roll" onclick="generate()">⚄ GENERATE ENCOUNTER</button>
-  </aside>
-
-  <main id="main">
-    <div id="result" class="empty">
-      <h2>STAND BY</h2>
-      <p>Configure your mission settings and hit Generate.</p>
+    <div class="form-grp">
+      <label class="fl" for="inp-etype">Specific Enemy Type</label>
+      <select id="inp-etype">
+        <option value="auto">Auto (roll on subtable)</option>
+      </select>
     </div>
-  </main>
-</div>
+
+    <div class="form-grp">
+      <label class="fl" for="inp-patron">Patron Type (optional)</label>
+      <select id="inp-patron">
+        <option value="">None / Unknown</option>
+        <option value="corporation">Corporation (+1 Danger Pay)</option>
+        <option value="local_gov">Local Government</option>
+        <option value="sector_gov">Sector Government</option>
+        <option value="wealthy">Wealthy Individual</option>
+        <option value="private">Private Organization</option>
+        <option value="secretive">Secretive Group (+1 Time Frame)</option>
+      </select>
+    </div>
+
+    <div class="form-grp">
+      <label class="fl" for="inp-rivalknown">Known Rival?</label>
+      <select id="inp-rivalknown">
+        <option value="no">No — generate random</option>
+        <option value="yes">Yes — tracked down (Showdown)</option>
+      </select>
+    </div>
+
+  </div>
+  <button class="btn-roll" onclick="generate()">⚄ GENERATE ENCOUNTER</button>
+</section>
+
+<!-- ── RESULTS (bottom) ───────────────────────────────────────── -->
+<main id="main">
+  <div id="result" class="empty">
+    <h2>STAND BY</h2>
+    <p>Configure your mission settings above and hit Generate.</p>
+  </div>
+</main>
 
 <script>
+// ═══════════════════════════════════════════════════════════════════
+// HIGH CONTRAST TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+function toggleHC(){
+  document.body.classList.toggle('hc');
+  const btn=document.getElementById('hc-btn');
+  const on=document.body.classList.contains('hc');
+  btn.classList.toggle('active',on);
+  btn.textContent=on?'☾ Dark Mode':'☀ High Contrast';
+  try{localStorage.setItem('5pfh-hc',on?'1':'0');}catch(e){}
+}
+(function(){
+  try{if(localStorage.getItem('5pfh-hc')==='1'){document.body.classList.add('hc');const b=document.getElementById('hc-btn');b.classList.add('active');b.textContent='☾ Dark Mode';}}catch(e){}
+})();
+
 // ═══════════════════════════════════════════════════════════════════
 // DATA TABLES
 // ═══════════════════════════════════════════════════════════════════
@@ -317,7 +474,7 @@ const ENEMIES = {
     {r:[91,94],name:'Hulker Gang',numbers:'+0',panic:'1',speed:'4"',combat:'+1',tough:'5',ai:'A',wpn:'1A',
      special:'Ferocious: +1 to Brawling rolls when initiating combat.\nAggro: If Hit and surviving, move 1" toward the shooter.\nBounty rules apply.'},
     {r:[95,100],name:'Gun Slingers',numbers:'+1',panic:'1-2',speed:'4"',combat:'+1',tough:'3',ai:'T',wpn:'1B',
-     special:"Trick shot: Any natural 6 when shooting allows an additional shot at the same target or another within 2\".\nBounty rules apply."},
+     special:"Trick shot: Any natural 6 when shooting allows an additional shot at the same or another target within 2\".\nBounty rules apply."},
   ],
   hired: [
     {r:[1,14],name:'Unknown Mercs',numbers:'+0',panic:'1-2',speed:'5"',combat:'+1',tough:'4',ai:'T',wpn:'2B',
@@ -369,7 +526,7 @@ const ENEMIES = {
     {r:[42,48],name:'Mutants',numbers:'+3',panic:'1-3',speed:'4"',combat:'+0',tough:'5',ai:'A',wpn:'1A',
      special:'Interested Parties: +1 for Unique Individual rolls.\nCowardly: Lieutenants are affected by Morale dice.'},
     {r:[49,52],name:'Primitives',numbers:'+2',panic:'1-2',speed:'6"',combat:'+1',tough:'3',ai:'A',wpn:'—',
-     special:'Interested Parties: +1 for Unique Individual rolls.\nGoing medieval: Each carries a Blade; Specialists carry a Brutal Melee Weapon. No weapon roll needed.'},
+     special:'Interested Parties: +1 for Unique Individual rolls.\nGoing medieval: Each carries a Blade; Specialists carry a Brutal Melee Weapon.'},
     {r:[53,56],name:'Precursor Exiles',numbers:'+0',panic:'1-2',speed:'6"',combat:'+1',tough:'4',ai:'T',wpn:'3B',
      special:'Interested Parties: +1 for Unique Individual rolls.\nPrediction: You cannot Seize the Initiative.'},
     {r:[57,63],name:"K'Erin Colonists",numbers:'+1',panic:'1',speed:'5"',combat:'+1',tough:'4',ai:'A',wpn:'2A',
@@ -395,15 +552,13 @@ const ENEMIES = {
     {r:[13,18],name:'Abductor Raiders',numbers:'+3',panic:'1',speed:'4"',combat:'+0',tough:'3',ai:'A',wpn:'2A',
      special:'Invasion Threat.'},
     {r:[19,28],name:'Swarm Brood',numbers:'+2',panic:'0',speed:'6"',combat:'+1',tough:'4',ai:'B',wpn:'Claws (Dmg +1)',
-     special:'Pack hunters: All Brawls initiated by Swarm resolved at end of Enemy Actions phase. Will always try to gang up.\nInvasion Threat.'},
+     special:'Pack hunters: All Brawls initiated by Swarm resolved at end of Enemy Actions phase.\nInvasion Threat.'},
     {r:[29,34],name:'Haywire Robots',numbers:'+2',panic:'0',speed:'3"',combat:'+0',tough:'4',ai:'R',wpn:'Smash (Dmg +0)',
      special:'Careless: You are +1 to Seize the Initiative.\n6+ Saving Throw.'},
-    {r:[35,44],name:'Razor Lizards',numbers:'+2',panic:'1-2',speed:'6"',combat:'+1',tough:'3',ai:'B',wpn:'Fangs (Dmg +0)',
-     special:''},
+    {r:[35,44],name:'Razor Lizards',numbers:'+2',panic:'1-2',speed:'6"',combat:'+1',tough:'3',ai:'B',wpn:'Fangs (Dmg +0)',special:''},
     {r:[45,54],name:'Sand Runners',numbers:'+3',panic:'1-2',speed:'6"',combat:'+0',tough:'3',ai:'B',wpn:'Fangs (Dmg +0)',
      special:'Alert: You are -1 to Seize the Initiative.'},
-    {r:[55,64],name:'Vent Crawlers (Swarm)',numbers:'+3',panic:'1-2',speed:'6"',combat:'+0',tough:'3',ai:'R',wpn:'Claws (Dmg +0)',
-     special:''},
+    {r:[55,64],name:'Vent Crawlers (Swarm)',numbers:'+3',panic:'1-2',speed:'6"',combat:'+0',tough:'3',ai:'R',wpn:'Claws (Dmg +0)',special:''},
     {r:[65,69],name:'Krorg',numbers:'+0',panic:'1-2',speed:'5"',combat:'+1',tough:'6',ai:'B',wpn:'Claws (Dmg +2)',
      special:'Ferocious: +1 to Brawling rolls when initiating combat.\nEasy targets: +1 when firing at this enemy.\n5+ Saving Throw.\nTough fight: A random survivor gains +1 XP.'},
     {r:[70,78],name:'Large Bugs',numbers:'+2',panic:'1',speed:'5"',combat:'+1',tough:'5',ai:'R',wpn:'Mandibles (Dmg +1)',
@@ -417,49 +572,41 @@ const ENEMIES = {
   ],
 };
 
-const WEAPONS_MAIN = {
-  1: ['Scrap pistol','Handgun','Colony rifle','Military rifle','Scrap pistol + Blade','Shotgun'],
-  2: ['Colony rifle','Military rifle','Military rifle','Military rifle','Hand laser','Infantry laser'],
-  3: ['Hand laser','Hand laser','Infantry laser','Infantry laser','Blast rifle','Blast rifle'],
+const WEAPONS_MAIN={1:['Scrap pistol','Handgun','Colony rifle','Military rifle','Scrap pistol + Blade','Shotgun'],2:['Colony rifle','Military rifle','Military rifle','Military rifle','Hand laser','Infantry laser'],3:['Hand laser','Hand laser','Infantry laser','Infantry laser','Blast rifle','Blast rifle']};
+const WEAPONS_SPEC={A:["Power claw","Shotgun","Auto rifle","Clingfire pistol","Hunting rifle","Hand gun + Ripper sword"],B:["Marksman's rifle","Auto rifle","Shell gun","Hand flamer","Rattle gun","Rattle gun"],C:["Marksman's rifle","Shell gun","Fury rifle","Plasma rifle","Plasma rifle","Hyper blaster"]};
+
+const OBJECTIVES={
+  opportunity:[{r:[1,2],name:'Move Through',desc:'At least 2 crew members must move off the opposing battlefield edge.'},{r:[3,4],name:'Deliver',desc:'A crew member carries a package to the exact center of the table. A Combat Action places it safely.'},{r:[5,6],name:'Access',desc:'Reach the console at the center. Roll 1D6+Savvy needing 6+ as a Combat Action. Win once accessed.'},{r:[7,8],name:'Patrol',desc:'Randomly select 3 large terrain features. A crew member must end a move within 2" of each.'},{r:[9,10],name:'Fight Off',desc:'Drive off the enemy. Win by Holding the Field.'}],
+  patron:[{r:[1,2],name:'Deliver',desc:'A crew member carries a package to the center. A Combat Action places it safely.'},{r:[3,3],name:'Eliminate',desc:'Select a random enemy. Kill them to win. If they would Bail, they freeze for one final round.'},{r:[4,5],name:'Move Through',desc:'At least 2 crew members must move off the opposing battlefield edge.'},{r:[6,7],name:'Secure',desc:'End 2 consecutive rounds with crew within 2" of the table center, no enemy within 6".'},{r:[8,8],name:'Protect',desc:'A VIP must spend a full round within 3" of the table center. VIP sets up 12" from center.'},{r:[9,10],name:'Fight Off',desc:'Drive off the enemy. Win by Holding the Field.'}],
+  quest:[{r:[1,2],name:'Move Through',desc:'At least 2 crew members must move off the opposing battlefield edge.'},{r:[3,4],name:'Search',desc:'Put a token on each medium/large terrain feature. Search by moving into contact and rolling 1D6 (5+) as a Combat Action.'},{r:[5,6],name:'Defend',desc:'Drive off the enemy. Win by Holding the Field. Cautious/Defensive/Tactical AIs switch to Aggressive.'},{r:[7,8],name:'Acquire',desc:'An item is at the center. Move into contact, take a Combat Action, then move off the table.'},{r:[9,10],name:'Fight Off',desc:'Final Quest battle. Win by Holding the Field. +1 to enemy numbers.'}],
 };
-const WEAPONS_SPEC = {
-  A: ['Power claw','Shotgun','Auto rifle','Clingfire pistol','Hunting rifle','Hand gun + Ripper sword'],
-  B: ['Marksman\'s rifle','Auto rifle','Shell gun','Hand flamer','Rattle gun','Rattle gun'],
-  C: ['Marksman\'s rifle','Shell gun','Fury rifle','Plasma rifle','Plasma rifle','Hyper blaster'],
+const RIVAL_ATTACKS=[{r:[1,1],name:'Ambush',desc:'Deploy one fewer crew than standard. You cannot Seize the Initiative.'},{r:[2,3],name:'Brought Friends',desc:'Add 1 additional enemy figure.'},{r:[4,7],name:'Showdown',desc:'A straight-up fight. No modifications.'},{r:[8,8],name:'Assault',desc:'Add one additional enemy. Crew must set up in or adjacent to a building. Fail to Hold the Field = lose 1D3 credits.'},{r:[9,10],name:'Raid',desc:'Fail to Hold the Field = 1D6+1 Hull Point damage to your ship.'}];
+
+const DEPLOYMENT={
+  'opportunity/patron':[{r:[1,40],name:'No Condition',desc:''},{r:[41,45],name:'Small Encounter',desc:'A random crew member sits out. Reduce enemy numbers by -1 (or -2 if they outnumber you).'},{r:[46,50],name:'Poor Visibility',desc:'Maximum visibility 1D6+8". Reroll at the start of each round.'},{r:[51,55],name:'Brief Engagement',desc:'At end of each round, roll 2D6. If equal or below the round number, the game ends inconclusively.'},{r:[56,60],name:'Toxic Environment',desc:'Whenever a combatant is Stunned, roll 1D6+Savvy (0 for enemies). Failure to roll 4+ = casualty.'},{r:[61,65],name:'Surprise Encounter',desc:'The enemy cannot act in the first round.'},{r:[66,75],name:'Delayed',desc:'2 random crew members start off the table. Each round end, roll 1D6; if equal/below the round number, place them on your edge.'},{r:[76,80],name:'Slippery Ground',desc:'All ground-level movement is -1 Speed.'},{r:[81,85],name:'Bitter Struggle',desc:'Enemy Morale is +1.'},{r:[86,90],name:'Caught Off Guard',desc:'Your squad all act in the Slow Actions phase in Round 1.'},{r:[91,100],name:'Gloomy',desc:'Maximum visibility is 9". Characters who fire can be fired upon at any range.'}],
+  rival:[{r:[1,10],name:'No Condition',desc:''},{r:[11,15],name:'Small Encounter',desc:'A random crew member sits out. Reduce enemy numbers by -1 (or -2 if they outnumber you).'},{r:[16,20],name:'Poor Visibility',desc:'Maximum visibility 1D6+8". Reroll at the start of each round.'},{r:[21,25],name:'Brief Engagement',desc:'At end of each round, roll 2D6. If equal or below the round number, the game ends inconclusively.'},{r:[26,30],name:'Toxic Environment',desc:'Whenever a combatant is Stunned, roll 1D6+Savvy (0 for enemies). Failure to roll 4+ = casualty.'},{r:[31,45],name:'Surprise Encounter',desc:'The enemy cannot act in the first round.'},{r:[46,50],name:'Delayed',desc:'2 random crew members start off the table. Each round end, roll 1D6; if equal/below the round number, place them on your edge.'},{r:[51,60],name:'Slippery Ground',desc:'All ground-level movement is -1 Speed.'},{r:[61,75],name:'Bitter Struggle',desc:'Enemy Morale is +1.'},{r:[76,90],name:'Caught Off Guard',desc:'Your squad all act in the Slow Actions phase in Round 1.'},{r:[91,100],name:'Gloomy',desc:'Maximum visibility is 9". Characters who fire can be fired upon at any range.'}],
+  quest:[{r:[1,5],name:'No Condition',desc:''},{r:[6,10],name:'Small Encounter',desc:'A random crew member sits out. Reduce enemy numbers by -1 (or -2 if they outnumber you).'},{r:[11,25],name:'Poor Visibility',desc:'Maximum visibility 1D6+8". Reroll at the start of each round.'},{r:[26,30],name:'Brief Engagement',desc:'At end of each round, roll 2D6. If equal or below the round number, the game ends inconclusively.'},{r:[31,40],name:'Toxic Environment',desc:'Whenever a combatant is Stunned, roll 1D6+Savvy (0 for enemies). Failure to roll 4+ = casualty.'},{r:[41,50],name:'Surprise Encounter',desc:'The enemy cannot act in the first round.'},{r:[51,60],name:'Delayed',desc:'2 random crew members start off the table. Each round end, roll 1D6; if equal/below the round number, place them on your edge.'},{r:[61,65],name:'Slippery Ground',desc:'All ground-level movement is -1 Speed.'},{r:[66,80],name:'Bitter Struggle',desc:'Enemy Morale is +1.'},{r:[81,90],name:'Caught Off Guard',desc:'Your squad all act in the Slow Actions phase in Round 1.'},{r:[91,100],name:'Gloomy',desc:'Maximum visibility is 9". Characters who fire can be fired upon at any range.'}],
 };
 
-const OBJECTIVES = {
-  opportunity: [{r:[1,2],name:'Move Through',desc:'At least 2 crew members must move off the opposing battlefield edge. Win if you drive off all enemies with 2+ remaining.'},{r:[3,4],name:'Deliver',desc:'A crew member carries a package to the exact center of the table. A Combat Action places it safely. Win if you drive off all enemies with package intact.'},{r:[5,6],name:'Access',desc:'Reach the computer console at the center. Roll 1D6+Savvy, needing 6+; a Combat Action per attempt (up to 2 per round). Win once accessed.'},{r:[7,8],name:'Patrol',desc:"Tally large terrain features and randomly select 3. A crew member must end a move within 2\" of each. Win once all 3 are checked."},{r:[9,10],name:'Fight Off',desc:'No objective other than driving off the enemy. Win by Holding the Field.'}],
-  patron: [{r:[1,2],name:'Deliver',desc:'A crew member carries a package to the exact center of the table. A Combat Action places it safely.'},{r:[3,3],name:'Eliminate',desc:"Select a random enemy. Kill them to win. If they would Bail, they're frozen for one round; kill them or they escape."},{r:[4,5],name:'Move Through',desc:'At least 2 crew members must move off the opposing battlefield edge.'},{r:[6,7],name:'Secure',desc:"End 2 consecutive rounds with crew within 2\" of the table center, no enemy within 6\" of those crew."},{r:[8,8],name:'Protect',desc:"A VIP (Reactions 1/4\"/+0/3) must spend a full round within 3\" of the table center. VIP sets up 12\" from center."},{r:[9,10],name:'Fight Off',desc:'Drive off the enemy. Win by Holding the Field.'}],
-  quest: [{r:[1,2],name:'Move Through',desc:'At least 2 crew members must move off the opposing battlefield edge.'},{r:[3,4],name:'Search',desc:"Put a token on each medium/large terrain feature. Search by moving into contact and rolling 1D6 (5+ finds it) as a Combat Action. Win once found."},{r:[5,6],name:'Defend',desc:'Drive off the enemy. Win by Holding the Field. (Cautious/Defensive/Tactical AIs switch to Aggressive.)'},{r:[7,8],name:'Acquire',desc:'An item is placed at the center. A crew member must contact it, take a Combat Action, then move off the table.'},{r:[9,10],name:'Fight Off',desc:'This is the final Quest battle. Win by Holding the Field. +1 to enemy numbers.'}],
-};
-const RIVAL_ATTACKS = [{r:[1,1],name:'Ambush',desc:'Deploy one fewer crew than standard. You cannot Seize the Initiative.'},{r:[2,3],name:'Brought Friends',desc:'Add 1 additional enemy figure.'},{r:[4,7],name:'Showdown',desc:'A straight-up fight. No modifications.'},{r:[8,8],name:'Assault',desc:'Add one additional enemy. Your crew must set up in or adjacent to a building. Failing to Hold the Field costs 1D3 credits.'},{r:[9,10],name:'Raid',desc:'Failing to Hold the Field deals 1D6+1 Hull Point damage to your ship.'}];
-
-const DEPLOYMENT = {
-  'opportunity/patron': [{r:[1,40],name:'No Condition',desc:''},{r:[41,45],name:'Small Encounter',desc:'A random crew member sits this one out. Reduce enemy numbers by -1 (or -2 if they outnumber you).'},{r:[46,50],name:'Poor Visibility',desc:'Maximum visibility 1D6+8". Reroll at the start of each round.'},{r:[51,55],name:'Brief Engagement',desc:'At end of each round, roll 2D6. If equal or below the round number, the game ends inconclusively.'},{r:[56,60],name:'Toxic Environment',desc:'Whenever a combatant is Stunned, roll 1D6+Savvy (0 for enemies). Failure to roll a 4+ = casualty.'},{r:[61,65],name:'Surprise Encounter',desc:'The enemy cannot act in the first round.'},{r:[66,75],name:'Delayed',desc:'2 random crew members start off the table. Each round end, roll 1D6; if equal/below the round number, place them on your battlefield edge.'},{r:[76,80],name:'Slippery Ground',desc:'All ground-level movement is -1 Speed.'},{r:[81,85],name:'Bitter Struggle',desc:'Enemy Morale is +1.'},{r:[86,90],name:'Caught Off Guard',desc:'Your squad all act in the Slow Actions phase in Round 1.'},{r:[91,100],name:'Gloomy',desc:'Maximum visibility is 9". Characters who fire can be fired upon at any range.'}],
-  rival: [{r:[1,10],name:'No Condition',desc:''},{r:[11,15],name:'Small Encounter',desc:'A random crew member sits this one out. Reduce enemy numbers by -1 (or -2 if they outnumber you).'},{r:[16,20],name:'Poor Visibility',desc:'Maximum visibility 1D6+8". Reroll at the start of each round.'},{r:[21,25],name:'Brief Engagement',desc:'At end of each round, roll 2D6. If equal or below the round number, the game ends inconclusively.'},{r:[26,30],name:'Toxic Environment',desc:'Whenever a combatant is Stunned, roll 1D6+Savvy (0 for enemies). Failure to roll a 4+ = casualty.'},{r:[31,45],name:'Surprise Encounter',desc:'The enemy cannot act in the first round.'},{r:[46,50],name:'Delayed',desc:'2 random crew members start off the table. Each round end, roll 1D6; if equal/below round number, place them on your edge.'},{r:[51,60],name:'Slippery Ground',desc:'All ground-level movement is -1 Speed.'},{r:[61,75],name:'Bitter Struggle',desc:'Enemy Morale is +1.'},{r:[76,90],name:'Caught Off Guard',desc:'Your squad all act in the Slow Actions phase in Round 1.'},{r:[91,100],name:'Gloomy',desc:'Maximum visibility is 9". Characters who fire can be fired upon at any range.'}],
-  quest: [{r:[1,5],name:'No Condition',desc:''},{r:[6,10],name:'Small Encounter',desc:'A random crew member sits this one out. Reduce enemy numbers by -1 (or -2 if they outnumber you).'},{r:[11,25],name:'Poor Visibility',desc:'Maximum visibility 1D6+8". Reroll at the start of each round.'},{r:[26,30],name:'Brief Engagement',desc:'At end of each round, roll 2D6. If equal or below the round number, the game ends inconclusively.'},{r:[31,40],name:'Toxic Environment',desc:'Whenever a combatant is Stunned, roll 1D6+Savvy (0 for enemies). Failure to roll a 4+ = casualty.'},{r:[41,50],name:'Surprise Encounter',desc:'The enemy cannot act in the first round.'},{r:[51,60],name:'Delayed',desc:'2 random crew members start off the table. Each round end, roll 1D6; if equal/below round number, place them on your edge.'},{r:[61,65],name:'Slippery Ground',desc:'All ground-level movement is -1 Speed.'},{r:[66,80],name:'Bitter Struggle',desc:'Enemy Morale is +1.'},{r:[81,90],name:'Caught Off Guard',desc:'Your squad all act in the Slow Actions phase in Round 1.'},{r:[91,100],name:'Gloomy',desc:'Maximum visibility is 9". Characters who fire can be fired upon at any range.'}],
+const NOTABLE_SIGHTS={
+  'opportunity/patron':[{r:[1,20],name:'Nothing Special',desc:''},{r:[21,30],name:'Documentation',desc:'Gain a Quest Rumor if you can reach it.'},{r:[31,40],name:'Priority Target',desc:'Select a random enemy. +1 Toughness. If slain, gain 1D3 credits.'},{r:[41,50],name:'Loot Cache',desc:'Roll once on the Loot Table.'},{r:[51,60],name:'Shiny Bits',desc:'Gain 1 credit.'},{r:[61,70],name:'Really Shiny Bits',desc:'Gain 2 credits.'},{r:[71,80],name:'Person of Interest',desc:'Gain +1 Story Point.'},{r:[81,90],name:'Peculiar Item',desc:'Gain +2 XP.'},{r:[91,100],name:'Curious Item',desc:'Roll 1D6: on 1-4, sell for 1 credit; on 5-6, roll on the Loot Table.'}],
+  rival:[{r:[1,40],name:'Nothing Special',desc:''},{r:[41,50],name:'Documentation',desc:'Gain a Quest Rumor if you can reach it.'},{r:[51,60],name:'Priority Target',desc:'Select a random enemy. +1 Toughness. If slain, gain 1D3 credits.'},{r:[61,70],name:'Loot Cache',desc:'Roll once on the Loot Table.'},{r:[71,75],name:'Shiny Bits',desc:'Gain 1 credit.'},{r:[76,80],name:'Really Shiny Bits',desc:'Gain 2 credits.'},{r:[81,90],name:'Person of Interest',desc:'Gain +1 Story Point.'},{r:[91,95],name:'Peculiar Item',desc:'Gain +2 XP.'},{r:[96,100],name:'Curious Item',desc:'Roll 1D6: on 1-4, sell for 1 credit; on 5-6, roll on the Loot Table.'}],
+  quest:[{r:[1,10],name:'Nothing Special',desc:''},{r:[11,25],name:'Documentation',desc:'Gain a Quest Rumor if you can reach it.'},{r:[26,35],name:'Priority Target',desc:'Select a random enemy. +1 Toughness. If slain, gain 1D3 credits.'},{r:[36,50],name:'Loot Cache',desc:'Roll once on the Loot Table.'},{r:[51,55],name:'Shiny Bits',desc:'Gain 1 credit.'},{r:[56,65],name:'Really Shiny Bits',desc:'Gain 2 credits.'},{r:[66,80],name:'Person of Interest',desc:'Gain +1 Story Point.'},{r:[81,90],name:'Peculiar Item',desc:'Gain +2 XP.'},{r:[91,100],name:'Curious Item',desc:'Roll 1D6: on 1-4, sell for 1 credit; on 5-6, roll on the Loot Table.'}],
 };
 
-const NOTABLE_SIGHTS = {
-  'opportunity/patron': [{r:[1,20],name:'Nothing Special',desc:''},{r:[21,30],name:'Documentation',desc:'Gain a Quest Rumor if you can reach it.'},{r:[31,40],name:'Priority Target',desc:'Select a random enemy. +1 Toughness. If slain, gain 1D3 credits.'},{r:[41,50],name:'Loot Cache',desc:'Roll once on the Loot Table.'},{r:[51,60],name:'Shiny Bits',desc:'Gain 1 credit.'},{r:[61,70],name:'Really Shiny Bits',desc:'Gain 2 credits.'},{r:[71,80],name:'Person of Interest',desc:'Gain +1 Story Point.'},{r:[81,90],name:'Peculiar Item',desc:'Gain +2 XP.'},{r:[91,100],name:'Curious Item',desc:'Roll 1D6: on 1-4, sell for 1 credit; on 5-6, roll on the Loot Table.'}],
-  rival: [{r:[1,40],name:'Nothing Special',desc:''},{r:[41,50],name:'Documentation',desc:'Gain a Quest Rumor if you can reach it.'},{r:[51,60],name:'Priority Target',desc:'Select a random enemy. +1 Toughness. If slain, gain 1D3 credits.'},{r:[61,70],name:'Loot Cache',desc:'Roll once on the Loot Table.'},{r:[71,75],name:'Shiny Bits',desc:'Gain 1 credit.'},{r:[76,80],name:'Really Shiny Bits',desc:'Gain 2 credits.'},{r:[81,90],name:'Person of Interest',desc:'Gain +1 Story Point.'},{r:[91,95],name:'Peculiar Item',desc:'Gain +2 XP.'},{r:[96,100],name:'Curious Item',desc:'Roll 1D6: on 1-4, sell for 1 credit; on 5-6, roll on the Loot Table.'}],
-  quest: [{r:[1,10],name:'Nothing Special',desc:''},{r:[11,25],name:'Documentation',desc:'Gain a Quest Rumor if you can reach it.'},{r:[26,35],name:'Priority Target',desc:'Select a random enemy. +1 Toughness. If slain, gain 1D3 credits.'},{r:[36,50],name:'Loot Cache',desc:'Roll once on the Loot Table.'},{r:[51,55],name:'Shiny Bits',desc:'Gain 1 credit.'},{r:[56,65],name:'Really Shiny Bits',desc:'Gain 2 credits.'},{r:[66,80],name:'Person of Interest',desc:'Gain +1 Story Point.'},{r:[81,90],name:'Peculiar Item',desc:'Gain +2 XP.'},{r:[91,100],name:'Curious Item',desc:'Roll 1D6: on 1-4, sell for 1 credit; on 5-6, roll on the Loot Table.'}],
-};
-
-const UNIQUE_INDIVIDUALS = [
+const UNIQUE_INDIVIDUALS=[
   {r:[1,6],name:'Enemy Bruiser',speed:'—',combat:'+0 (base)',tough:'+1 (base)',ai:'G',luck:0,wpn:'Power Claw',special:'A particularly unpleasant-looking individual.'},
   {r:[7,12],name:'Enemy Heavy',speed:'—',combat:'—',tough:'—',ai:'D',luck:0,wpn:'Rattle Gun',special:'The enemy has opted to bring some additional firepower.'},
   {r:[13,17],name:'Enemy Boss',speed:'—',combat:'+1 (bonus)',tough:'+1 (bonus)',ai:'Same as enemy',luck:1,wpn:'Hand Cannon + Brutal Melee',special:'Bosses reduce Panic range by 1. When slain, an extra Morale die is rolled.'},
   {r:[18,22],name:'Hired Killer',speed:'5"',combat:'+1',tough:'5',ai:'A',luck:1,wpn:'Machine Pistol + Blade',special:'Will murder for credits.'},
-  {r:[23,25],name:'Corporate Spook',speed:'5"',combat:'+1',tough:'4',ai:'C',luck:1,wpn:'Hand Laser',special:'If all other enemies Bail, the Spook Bails too. If the Spook is slain, you automatically receive a Corporate Rival.'},
+  {r:[23,25],name:'Corporate Spook',speed:'5"',combat:'+1',tough:'4',ai:'C',luck:1,wpn:'Hand Laser',special:'If all other enemies Bail, the Spook Bails. If slain, you automatically receive a Corporate Rival.'},
   {r:[26,30],name:'Bounty Tracker',speed:'5"',combat:'+1',tough:'5',ai:'A',luck:1,wpn:'Shotgun + Blade',special:'Someone is willing to pay money to have you brought in.'},
-  {r:[31,35],name:'Callous Merc',speed:'4"',combat:'+2',tough:'5',ai:'T',luck:1,wpn:'Infantry Laser + Blade',special:'Bitter and disillusioned. They strike out on their own.'},
+  {r:[31,35],name:'Callous Merc',speed:'4"',combat:'+2',tough:'5',ai:'T',luck:1,wpn:'Infantry Laser + Blade',special:'Bitter and disillusioned.'},
   {r:[36,41],name:'Freelancer',speed:'4"',combat:'+1',tough:'4',ai:'T',luck:1,wpn:'Hand Cannon + Blade',special:'If slain in a Brawl, roll on the Loot Table and claim the item immediately.'},
-  {r:[42,44],name:'Secret Agent',speed:'6"',combat:'+2',tough:'4',ai:'A',luck:1,wpn:'Hand Laser + Glare Sword',special:'Target: Randomly select a crew member. The agent always moves toward that target, only firing at others if in the way or target not visible.'},
+  {r:[42,44],name:'Secret Agent',speed:'6"',combat:'+2',tough:'4',ai:'A',luck:1,wpn:'Hand Laser + Glare Sword',special:'Target: Randomly select a crew member. The agent always moves toward that target.'},
   {r:[45,48],name:'Hulker Brawler',speed:'4"',combat:'+1',tough:'6',ai:'A',luck:0,wpn:'Hand Cannon + Brutal Melee',special:'Melee fighter: +1 to Combat Skill when Brawling.'},
   {r:[49,53],name:'Gun Slinger',speed:'5"',combat:'+1',tough:'4',ai:'T',luck:1,wpn:'Machine Pistol',special:'Sharp shooter: +1 to Combat Skill when shooting.'},
-  {r:[54,56],name:'Engineer Tech',speed:'6"',combat:'+1',tough:'4',ai:'C',luck:1,wpn:'Blast Pistol',special:'A quiet alien species fascinated with technology and gadgetry.'},
+  {r:[54,56],name:'Engineer Tech',speed:'6"',combat:'+1',tough:'4',ai:'C',luck:1,wpn:'Blast Pistol',special:'A quiet alien species fascinated with technology.'},
   {r:[57,61],name:'Mutant Bruiser',speed:'4"',combat:'+1',tough:'5',ai:'G',luck:1,wpn:'Shotgun + Brutal Melee',special:'Ferocious: +1 to Brawling rolls when initiating combat.'},
   {r:[62,65],name:'Precursor Wanderer',speed:'7"',combat:'+2',tough:'4',ai:'A',luck:1,wpn:'Infantry Laser + Glare Sword',special:'One with the Flow: Moves before the Quick Actions phase.\n6+ Saving Throw.'},
   {r:[66,69],name:'Hakshan Investigator',speed:'5"',combat:'+0',tough:'4',ai:'D',luck:1,wpn:'Plasma Rifle',special:'Odd, suited aliens seeking something vitally important to their species.'},
@@ -467,46 +614,26 @@ const UNIQUE_INDIVIDUALS = [
   {r:[76,79],name:'Nomad Scout',speed:'6"',combat:'+1',tough:'4',ai:'D',luck:0,wpn:"Marksman's Rifle",special:"Concealed: Always counts as being in Cover when fired upon."},
   {r:[80,82],name:'Cyborg Merc',speed:'7"',combat:'+2',tough:'6',ai:'T',luck:1,wpn:'Auto Rifle + Power Claw',special:'6+ Saving Throw.'},
   {r:[83,85],name:'Rogue Psionic',speed:'4"',combat:'+0',tough:'4',ai:'C',luck:3,wpn:'Hand Gun',special:'Self-taught psionics are a substantial asset in a gun battle.'},
-  {r:[86,91],name:'Gene Dog',speed:'6"',combat:'+1',tough:'4',ai:'G',luck:0,wpn:'Fangs (Dmg +0)',special:'Loyal: When owner or Dog moves into a Brawl, it is not resolved until both have acted. If owner is slain, the Dog becomes Fearless and attacks anyone within 8". If all enemies Bail, the Dog Bails too.'},
+  {r:[86,91],name:'Gene Dog',speed:'6"',combat:'+1',tough:'4',ai:'G',luck:0,wpn:'Fangs (Dmg +0)',special:'Loyal: When owner or Dog moves into a Brawl, it is not resolved until both have acted. If owner is slain, the Dog becomes Fearless and attacks anyone within 8".'},
   {r:[92,96],name:'Sand Runner',speed:'7"',combat:'+0',tough:'3',ai:'G',luck:0,wpn:'Fangs (Dmg +1)',special:'These fierce lizards can make surprisingly loyal companions.'},
-  {r:[97,100],name:'Mk II Security Bot',speed:'4"',combat:'+2',tough:'5',ai:'G',luck:0,wpn:'Fury Rifle',special:'Targeting AI: May fire twice per round at the two closest visible targets. If only one visible, only one shot.\n6+ Saving Throw.'},
+  {r:[97,100],name:'Mk II Security Bot',speed:'4"',combat:'+2',tough:'5',ai:'G',luck:0,wpn:'Fury Rifle',special:'Targeting AI: May fire twice per round at the two closest visible targets.\n6+ Saving Throw.'},
 ];
 
-const AI_RULES = {
-  A: {name:'Aggressive', short:'Cluster 1" apart. Charge nearest enemy in Brawl if able.'},
-  C: {name:'Cautious',   short:'2 groups, 6" apart. Will retreat to Cover and fire.'},
-  D: {name:'Defensive',  short:'3 teams, 8" apart. Hold positions and return fire.'},
-  G: {name:'Guardian',   short:'Stay near protected target. Attacks only if threatened.'},
-  R: {name:'Rampage',    short:'Charge nearest figure. Will not retreat.'},
-  T: {name:'Tactical',   short:'3 teams, 8" apart. Advance with Cover. Prioritize objectives.'},
-  B: {name:'Beast',      short:'Pairs, spread across table. Charge nearest prey.'},
-};
+const AI_RULES={A:{name:'Aggressive',short:'Set up in 1 cluster, 1" apart. Charge nearest enemy each turn.'},C:{name:'Cautious',short:'2 groups, 6" apart. Retreat to Cover, fire from safety.'},D:{name:'Defensive',short:'3 teams, 8" apart. Hold positions and return fire.'},G:{name:'Guardian',short:'Stay near protected target. Attack only if directly threatened.'},R:{name:'Rampage',short:'Charge nearest figure. Will never retreat.'},T:{name:'Tactical',short:'3 teams, 8" apart. Advance using Cover. Prioritize objectives.'},B:{name:'Beast',short:'Pairs in 3 zones, 2" between pair. Hunt nearest prey.'}};
+const TERRAIN_SETS={'2x2':{large:2,small:4,linear:2},'2.5x2.5':{large:2,small:5,linear:4},'3x3':{large:3,small:6,linear:3}};
+const PATRON_DANGER_PAY=[{r:[1,4],val:'+1 credit'},{r:[5,8],val:'+2 credits'},{r:[9,9],val:'+3 credits'},{r:[10,10],val:'+3 credits, roll twice for mission pay (pick higher)'}];
+const PATRON_BENEFITS=[{r:[1,2],name:'Fringe Benefit',effect:'Roll on the Loot Table'},{r:[3,4],name:'Connections',effect:'Gain a Rumor'},{r:[5,5],name:'Company Store',effect:'Roll on the Trade Table'},{r:[6,6],name:'Health Insurance',effect:'Mark 2 campaign turns of injury recovery'},{r:[7,7],name:'Security Team',effect:'Reduce enemy force numbers by 1'},{r:[8,9],name:'Persistent',effect:'Patron remains available if you travel'},{r:[10,10],name:'Negotiable',effect:'Reroll Danger Pay and pick the better result'}];
+const PATRON_HAZARDS=[{r:[1,2],name:'Dangerous Job',effect:'Increase enemy force numbers by +1'},{r:[3,4],name:'Hot Job',effect:'After the job, you earn a Rival on 1-2 instead of just a 1'},{r:[5,5],name:'VIP',effect:'A random enemy has +1 Toughness and Combat Skill +2 (final value)'},{r:[6,6],name:'Veteran Opposition',effect:'Enemy is -1 to panic range'},{r:[7,7],name:'Low Priority',effect:'Reduce enemy force numbers by 1'},{r:[8,10],name:'Private Transport',effect:'Rivals cannot track you this campaign turn'}];
+const PATRON_CONDITIONS=[{r:[1,1],name:'Vengeful',effect:'If mission fails, Patron becomes a Rival'},{r:[2,3],name:'Demanding',effect:'Danger Pay is only paid upon success'},{r:[4,4],name:'Small Squad',effect:'You cannot deploy more than 4 crew'},{r:[5,5],name:'Full Squad',effect:'You must have 6 available crew'},{r:[6,6],name:'Clean',effect:'You cannot have ever made law enforcement Rivals'},{r:[7,8],name:'Busy',effect:'If mission succeeds, Patron offers a new job next campaign turn'},{r:[9,9],name:'One-time Contract',effect:'This Patron cannot be retained as a contact'},{r:[10,10],name:'Reputation Required',effect:'You must have completed a prior Patron job on this world'}];
+const PATRON_BHC_THRESH={corporation:{ben:8,haz:8,con:5},local_gov:{ben:8,haz:8,con:8},sector_gov:{ben:8,haz:8,con:8},wealthy:{ben:5,haz:8,con:8},private:{ben:8,haz:8,con:8},secretive:{ben:8,haz:5,con:8}};
 
-const TERRAIN_SETS = {
-  '2x2':    {large:2, small:4, linear:2},
-  '2.5x2.5':{large:2, small:5, linear:4},
-  '3x3':    {large:3, small:6, linear:3},
-};
-
-const PATRON_DANGER_PAY = [{r:[1,4],val:'+1 credit'},{r:[5,8],val:'+2 credits'},{r:[9,9],val:'+3 credits'},{r:[10,10],val:'+3 credits and roll twice, pick higher die for mission pay'}];
-const PATRON_BENEFITS    = [{r:[1,2],name:'Fringe Benefit',effect:'Roll on the Loot Table'},{r:[3,4],name:'Connections',effect:'Gain a Rumor'},{r:[5,5],name:'Company Store',effect:'Roll on the Trade Table'},{r:[6,6],name:'Health Insurance',effect:'Mark 2 campaign turns of injury recovery, assigned as you see fit'},{r:[7,7],name:'Security Team',effect:'Reduce enemy force numbers by 1'},{r:[8,9],name:'Persistent',effect:'Patron remains available if you travel'},{r:[10,10],name:'Negotiable',effect:'Reroll the Danger Pay and pick the better of the two rolls'}];
-const PATRON_HAZARDS     = [{r:[1,2],name:'Dangerous Job',effect:'Increase enemy force numbers by +1'},{r:[3,4],name:'Hot Job',effect:'After the job, you earn a Rival on a 1-2 instead of a 1'},{r:[5,5],name:'VIP',effect:'A random enemy has +1 Toughness and Combat Skill +2 (final value)'},{r:[6,6],name:'Veteran Opposition',effect:'Enemy is -1 to panic range'},{r:[7,7],name:'Low Priority',effect:'Reduce enemy force numbers by 1'},{r:[8,10],name:'Private Transport',effect:'Rivals cannot track you this campaign turn (if any)'}];
-const PATRON_CONDITIONS  = [{r:[1,1],name:'Vengeful',effect:'If mission fails, Patron becomes a Rival'},{r:[2,3],name:'Demanding',effect:'Danger Pay is only paid upon success'},{r:[4,4],name:'Small Squad',effect:'You cannot deploy more than 4 crew'},{r:[5,5],name:'Full Squad',effect:'You must have 6 available crew'},{r:[6,6],name:'Clean',effect:'You cannot have ever made law enforcement Rivals'},{r:[7,8],name:'Busy',effect:'If mission succeeds, Patron offers a new job next campaign turn'},{r:[9,9],name:'One-time Contract',effect:'This Patron cannot be retained as a contact'},{r:[10,10],name:'Reputation Required',effect:'You must have completed a prior Patron job on this world'}];
-const PATRON_BHC_THRESH  = {corporation:{ben:8,haz:8,con:5},local_gov:{ben:8,haz:8,con:8},sector_gov:{ben:8,haz:8,con:8},wealthy:{ben:5,haz:8,con:8},private:{ben:8,haz:8,con:8},secretive:{ben:8,haz:5,con:8}};
-
-// ═══════════════════════════════════════════════════════════════════
-// UTILITY
-// ═══════════════════════════════════════════════════════════════════
+// ── UTILITY ───────────────────────────────────────────────────────
 function d(n){return Math.floor(Math.random()*n)+1}
 function roll(table){const v=d(100);return table.find(e=>v>=e.r[0]&&v<=e.r[1])||table[table.length-1]}
 function rollD10(table){const v=d(10);return table.find(e=>v>=e.r[0]&&v<=e.r[1])||table[table.length-1]}
-function rollEnemyD100(table){const v=d(100);return table.find(e=>v>=e.r[0]&&v<=e.r[1])||table[table.length-1]}
-function rollD6x2high(){return Math.max(d(6),d(6))}
-function rollD6(){return d(6)}
-function rollD6x2low(){return Math.min(d(6),d(6))}
+function rollD100(table){const v=d(100);return table.find(e=>v>=e.r[0]&&v<=e.r[1])||table[table.length-1]}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-// populate enemy type dropdown
 function updateEnemyTypeDropdown(cat){
   const sel=document.getElementById('inp-etype');
   sel.innerHTML='<option value="auto">Auto (roll on subtable)</option>';
@@ -515,452 +642,453 @@ function updateEnemyTypeDropdown(cat){
 }
 document.getElementById('inp-ecat').addEventListener('change',e=>updateEnemyTypeDropdown(e.target.value));
 
-// ═══════════════════════════════════════════════════════════════════
-// GENERATE
-// ═══════════════════════════════════════════════════════════════════
-let lastResult = null;
+let lastResult=null;
 
+// ── GENERATE ──────────────────────────────────────────────────────
 function generate(){
-  const mission   = document.getElementById('inp-mission').value;
-  const crewSize  = +document.getElementById('inp-crewsize').value;
-  const diff      = document.getElementById('inp-diff').value;
-  const eCatInput = document.getElementById('inp-ecat').value;
-  const eTypeInput= document.getElementById('inp-etype').value;
-  const patronType= document.getElementById('inp-patron').value;
-  const rivalKnown= document.getElementById('inp-rivalknown').value;
-  const tableSize = document.getElementById('inp-table').value;
+  const mission   =document.getElementById('inp-mission').value;
+  const crewSize  =+document.getElementById('inp-crewsize').value;
+  const diff      =document.getElementById('inp-diff').value;
+  const eCatInput =document.getElementById('inp-ecat').value;
+  const eTypeInput=document.getElementById('inp-etype').value;
+  const patronType=document.getElementById('inp-patron').value;
+  const rivalKnown=document.getElementById('inp-rivalknown').value;
+  const tableSize =document.getElementById('inp-table').value;
 
-  // --- STEP 1: Enemy category
+  // Enemy category
   let catName;
   if(eCatInput==='auto'){
-    const missionForCat = mission==='invasion' ? 'invasion' : mission;
-    const catTable = ENEMY_CATEGORIES[missionForCat] || ENEMY_CATEGORIES.opportunity;
-    catName = roll(catTable).name;
-  } else {
-    catName = eCatInput;
-  }
+    const catTable=ENEMY_CATEGORIES[mission==='invasion'?'invasion':mission]||ENEMY_CATEGORIES.opportunity;
+    catName=roll(catTable).name;
+  } else catName=eCatInput;
 
-  // --- STEP 2: Enemy type
-  let enemy;
-  const enemyTable = ENEMIES[catName] || ENEMIES.criminal;
-  if(eTypeInput!=='auto'){
-    enemy = enemyTable[+eTypeInput] || rollEnemyD100(enemyTable);
-  } else {
-    enemy = rollEnemyD100(enemyTable);
-  }
+  // Enemy type
+  const enemyTable=ENEMIES[catName]||ENEMIES.criminal;
+  let enemy=eTypeInput!=='auto' ? enemyTable[+eTypeInput]||rollD100(enemyTable) : rollD100(enemyTable);
 
-  // --- STEP 3: Number of opponents
-  let baseRoll;
-  if(crewSize===6){baseRoll=rollD6x2high();}
-  else if(crewSize===5){baseRoll=rollD6();}
-  else{baseRoll=rollD6x2low();}
+  // Number of opponents
+  let baseRoll=crewSize===6?Math.max(d(6),d(6)):crewSize===5?d(6):Math.min(d(6),d(6));
+  const numMod=parseInt(enemy.numbers)||0;
+  let numOpponents=baseRoll+numMod;
+  if(mission==='quest') numOpponents+=1; // final battle +1
+  if(diff==='easy'&&numOpponents>=5) numOpponents-=1;
+  if(diff==='hardcore'||diff==='insanity') numOpponents+=1;
+  if(mission==='invasion') numOpponents+=2;
+  numOpponents=Math.max(1,numOpponents);
 
-  // Difficulty adjustments
-  if(diff==='challenging'||diff==='hardcore'||diff==='insanity'){
-    // reroll 1s and 2s on each die before picking for crew of 6
-  }
-
-  const numMod = parseInt(enemy.numbers)||0;
-  let numOpponents = baseRoll + numMod;
-
-  // Quest final battle
-  const isFinalQuest = mission==='quest';
-  if(isFinalQuest && eTypeInput==='auto') numOpponents += 1;
-
-  if(diff==='easy' && numOpponents>=5) numOpponents -= 1;
-  if(diff==='hardcore'||diff==='insanity') numOpponents += 1;
-  if(mission==='invasion') numOpponents += 2;
-  numOpponents = Math.max(1, numOpponents);
-
-  // Specialists
-  let specialists=0;
-  if(numOpponents<=2) specialists=0;
-  else if(numOpponents<=6) specialists=1;
-  else specialists=2;
-  if(diff==='insanity') specialists++;
-
-  // Lieutenant
-  const hasLieutenant = numOpponents>=4;
+  // Specialists & Lieutenant
+  const specialists=numOpponents<=2?0:numOpponents<=6?1+(diff==='insanity'?1:0):2+(diff==='insanity'?1:0);
+  const hasLieutenant=numOpponents>=4;
 
   // Unique Individual
-  let uiRoll2d6 = d(6)+d(6);
-  if(catName==='interested') uiRoll2d6 += 1;
-  if(diff==='hardcore') uiRoll2d6 += 1;
-  const hasUI = (diff==='insanity') || (catName!=='roving' && uiRoll2d6>=9);
-  let ui = null;
-  if(hasUI){
-    const uiTable = UNIQUE_INDIVIDUALS;
-    const uiRoll = d(100);
-    ui = uiTable.find(e=>uiRoll>=e.r[0]&&uiRoll<=e.r[1])||uiTable[uiTable.length-1];
-  }
+  let uiRoll=d(6)+d(6);
+  if(catName==='interested') uiRoll+=1;
+  if(diff==='hardcore') uiRoll+=1;
+  const hasUI=(diff==='insanity')||(catName!=='roving'&&uiRoll>=9);
+  let ui=null;
+  if(hasUI){const r=d(100);ui=UNIQUE_INDIVIDUALS.find(e=>r>=e.r[0]&&r<=e.r[1])||UNIQUE_INDIVIDUALS[UNIQUE_INDIVIDUALS.length-1];}
 
-  // --- STEP 4: Weapons
-  const wpnCode = enemy.wpn || '1A';
-  let mainWpnNum, specWpnLetter;
-  if(/^\d/.test(wpnCode)){
-    const parts = wpnCode.match(/(\d+)([A-Z]+)?/);
-    mainWpnNum = parseInt(parts[1])||1;
-    specWpnLetter = parts[2]||'A';
-  } else {
-    mainWpnNum = null; specWpnLetter = null;
-  }
-  let mainWeapon='', specWeapon='';
-  if(mainWpnNum && WEAPONS_MAIN[mainWpnNum]){
-    mainWeapon = WEAPONS_MAIN[mainWpnNum][d(6)-1]||WEAPONS_MAIN[mainWpnNum][0];
-  } else {
-    mainWeapon = wpnCode; specWpnLetter=null;
-  }
-  if(specWpnLetter && WEAPONS_SPEC[specWpnLetter]){
-    specWeapon = WEAPONS_SPEC[specWpnLetter][d(6)-1]||WEAPONS_SPEC[specWpnLetter][0];
-  }
-  // Aggressive AI with combat skill gets Blade
-  const aggressiveBlade = (enemy.ai==='A' && enemy.combat!=='+0') ? ' + Blade' : '';
-  const psychoBlade = enemy.ai==='R' ? ' + Blade' : '';
+  // Weapons
+  const wpnCode=enemy.wpn||'1A';
+  let mainWpnNum=null,specWpnLetter=null,mainWeapon='',specWeapon='';
+  if(/^\d/.test(wpnCode)){const p=wpnCode.match(/(\d+)([A-Z]+)?/);mainWpnNum=parseInt(p[1])||1;specWpnLetter=p[2]||'A';}
+  if(mainWpnNum&&WEAPONS_MAIN[mainWpnNum]) mainWeapon=WEAPONS_MAIN[mainWpnNum][d(6)-1]||WEAPONS_MAIN[mainWpnNum][0];
+  else{mainWeapon=wpnCode;specWpnLetter=null;}
+  if(specWpnLetter&&WEAPONS_SPEC[specWpnLetter]) specWeapon=WEAPONS_SPEC[specWpnLetter][d(6)-1]||WEAPONS_SPEC[specWpnLetter][0];
+  const aggressiveBlade=(enemy.ai==='A'&&enemy.combat!=='+0')?' + Blade':'';
+  const psychoBlade=enemy.ai==='R'?' + Blade':'';
 
-  // --- STEP 5: Deployment Conditions
-  let depKey;
-  if(mission==='rival') depKey='rival';
-  else if(mission==='quest') depKey='quest';
-  else depKey='opportunity/patron';
-  const depTable = DEPLOYMENT[depKey]||DEPLOYMENT['opportunity/patron'];
-  const depCondition = (mission==='invasion') ? {name:'Invasion',desc:'Survive 6 rounds. No Win condition. Any figure leaving before Round 6 becomes a casualty. Opponents have +2 to numbers.'} : roll(depTable);
+  // Deployment
+  let depKey=mission==='rival'?'rival':mission==='quest'?'quest':'opportunity/patron';
+  const depCondition=mission==='invasion'?{name:'Invasion',desc:'Survive 6 rounds. No Win condition. Any figure leaving before Round 6 becomes a casualty.'}:roll(DEPLOYMENT[depKey]||DEPLOYMENT['opportunity/patron']);
 
-  // --- STEP 6: Notable Sights
-  let sightKey;
-  if(mission==='rival') sightKey='rival';
-  else if(mission==='quest') sightKey='quest';
-  else sightKey='opportunity/patron';
-  const sightTable = NOTABLE_SIGHTS[sightKey]||NOTABLE_SIGHTS['opportunity/patron'];
-  const sight = (mission==='invasion') ? {name:'Invasion — No Notable Sight',desc:''} : roll(sightTable);
+  // Notable Sight
+  let sightKey=mission==='rival'?'rival':mission==='quest'?'quest':'opportunity/patron';
+  const sight=mission==='invasion'?{name:'No Notable Sight',desc:''}:roll(NOTABLE_SIGHTS[sightKey]||NOTABLE_SIGHTS['opportunity/patron']);
 
-  // --- STEP 7: Objective
-  let objective=null, rivalAttack=null;
-  if(mission==='rival'){
-    if(rivalKnown==='yes'){
-      rivalAttack={name:'Showdown',desc:'A straight-up fight. No modifications. You tracked them down.'};
-    } else {
-      rivalAttack = rollD10(RIVAL_ATTACKS);
-    }
-  } else if(mission==='invasion'){
-    objective={name:'Survive',desc:'Hold out for 6 rounds, then flee or fight until you Hold the Field.'};
-  } else {
-    const objKey = (mission==='patron') ? 'patron' : (mission==='quest') ? 'quest' : 'opportunity';
-    const objTable = OBJECTIVES[objKey]||OBJECTIVES.opportunity;
-    objective = rollD10(objTable);
-  }
+  // Objective
+  let objective=null,rivalAttack=null;
+  if(mission==='rival') rivalAttack=rivalKnown==='yes'?{name:'Showdown',desc:'A straight-up fight. No modifications. You tracked them down.'}:rollD10(RIVAL_ATTACKS);
+  else if(mission==='invasion') objective={name:'Survive',desc:'Hold out for 6 rounds, then flee or fight until you Hold the Field.'};
+  else{const ok=mission==='patron'?'patron':mission==='quest'?'quest':'opportunity';objective=rollD10(OBJECTIVES[ok]||OBJECTIVES.opportunity);}
 
-  // --- STEP 8: Patron job details (if patron)
-  let patronDetails = null;
-  if(mission==='patron' && patronType){
-    const thresholds = PATRON_BHC_THRESH[patronType]||PATRON_BHC_THRESH.local_gov;
-    const dpRoll = d(10) + (patronType==='corporation'?1:0);
-    const dangerPay = PATRON_DANGER_PAY.find(e=>dpRoll>=e.r[0]&&dpRoll<=e.r[1])||PATRON_DANGER_PAY[0];
-
-    const timeRoll = d(10) + (patronType==='secretive'?1:0);
-    const timeFrame = timeRoll<=5 ? 'This campaign turn' : timeRoll<=7 ? 'This or the next campaign turn' : timeRoll<=9 ? 'This or the following 2 turns' : 'Any time';
-
-    const benRoll=d(10), hazRoll=d(10), conRoll=d(10);
-    const benefit   = benRoll>=thresholds.ben ? rollD10(PATRON_BENEFITS)   : null;
-    const hazard    = hazRoll>=thresholds.haz ? rollD10(PATRON_HAZARDS)    : null;
-    const condition = conRoll>=thresholds.con ? rollD10(PATRON_CONDITIONS) : null;
-
+  // Patron details
+  let patronDetails=null;
+  if(mission==='patron'&&patronType){
+    const thr=PATRON_BHC_THRESH[patronType]||PATRON_BHC_THRESH.local_gov;
+    const dpRoll=d(10)+(patronType==='corporation'?1:0);
+    const dangerPay=PATRON_DANGER_PAY.find(e=>dpRoll>=e.r[0]&&dpRoll<=e.r[1])||PATRON_DANGER_PAY[0];
+    const timeRoll=d(10)+(patronType==='secretive'?1:0);
+    const timeFrame=timeRoll<=5?'This campaign turn':timeRoll<=7?'This or the next campaign turn':timeRoll<=9?'This or the following 2 turns':'Any time';
+    const benefit=d(10)>=thr.ben?rollD10(PATRON_BENEFITS):null;
+    const hazard=d(10)>=thr.haz?rollD10(PATRON_HAZARDS):null;
+    const condition=d(10)>=thr.con?rollD10(PATRON_CONDITIONS):null;
     patronDetails={dangerPay,timeFrame,benefit,hazard,condition};
   }
 
-  // --- STEP 9: Terrain
-  const terrain = TERRAIN_SETS[tableSize]||TERRAIN_SETS['2.5x2.5'];
-  const aiData  = AI_RULES[enemy.ai]||{name:'?',short:'—'};
+  const terrain=TERRAIN_SETS[tableSize]||TERRAIN_SETS['2.5x2.5'];
+  const aiData=AI_RULES[enemy.ai]||{name:'?',short:'—'};
+  const catDisplay={criminal:'Criminal Elements',hired:'Hired Muscle',interested:'Interested Parties',roving:'Roving Threats'}[catName]||catName;
 
-  // Build narrative
-  const catDisplay = {criminal:'Criminal Elements',hired:'Hired Muscle',interested:'Interested Parties',roving:'Roving Threats'}[catName]||catName;
-
-  lastResult = {mission,crewSize,diff,catName,catDisplay,enemy,numOpponents,specialists,hasLieutenant,ui,mainWeapon,specWeapon,aggressiveBlade,psychoBlade,depCondition,sight,objective,rivalAttack,patronDetails,terrain,tableSize,aiData,wpnCode,mainWpnNum,specWpnLetter};
-
+  lastResult={mission,crewSize,diff,catName,catDisplay,enemy,numOpponents,specialists,hasLieutenant,ui,mainWeapon,specWeapon,aggressiveBlade,psychoBlade,depCondition,sight,objective,rivalAttack,patronDetails,terrain,tableSize,aiData,wpnCode,mainWpnNum,specWpnLetter};
   renderResult(lastResult);
+
+  // Scroll results into view on mobile
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════════════════
-function missionLabel(m){return{opportunity:'Opportunity Mission',patron:'Patron Mission',rival:'Rival Attack',quest:'Quest Mission',invasion:'Invasion Battle'}[m]||m}
-function catColor(cat){return{criminal:'#e07060',hired:'#5a8aa8',interested:'#7a9860',roving:'#9a6090'}[cat]||'#8a90a8'}
+// ── RENDER ────────────────────────────────────────────────────────
+const ML=m=>({opportunity:'Opportunity Mission',patron:'Patron Mission',rival:'Rival Attack',quest:'Quest Mission',invasion:'Invasion Battle'}[m]||m);
+const CC=c=>({criminal:'#e07060',hired:'#5a8aa8',interested:'#7a9860',roving:'#9a6090'}[c]||'#8a90a8');
 
 function renderResult(r){
   const el=document.getElementById('result');
   el.className='fade-in';
-
-  const isFinalQuest=r.mission==='quest';
-
-  let html=`
-  <div style="margin-bottom:1.5rem">
-    <div style="font-family:var(--fh);font-size:2.2rem;color:var(--text);letter-spacing:3px;line-height:1">${missionLabel(r.mission)}</div>
-    <div style="font-family:var(--fm);font-size:.65rem;color:var(--text3);letter-spacing:3px;margin-top:4px">
-      ${r.diff.toUpperCase()} DIFFICULTY — ${r.crewSize}-FIGURE CREW — ${r.tableSize} TABLE
-    </div>
+  el.innerHTML=`
+  <div class="result-header">
+    <div class="result-title">${ML(r.mission)}</div>
+    <div class="result-meta">${r.diff.toUpperCase()} DIFFICULTY — ${r.crewSize}-FIGURE CREW — ${r.tableSize} TABLE</div>
   </div>
 
-  <!-- ENEMY -->
   <div class="enc-panel">
-    <div class="enc-title">
-      Enemy Force
-      <span class="badge" style="border-color:${catColor(r.catName)};color:${catColor(r.catName)}">${r.catDisplay}</span>
-    </div>
+    <div class="enc-title">Enemy Force <span class="badge" style="border-color:${CC(r.catName)};color:${CC(r.catName)}">${r.catDisplay}</span></div>
     <div class="enc-body">
       <div class="enemy-block">
         <div class="enemy-name">${esc(r.enemy.name)}</div>
         <div class="enemy-cat">${r.catDisplay.toUpperCase()}</div>
         <div class="enemy-stats">
-          ${esStat('Speed',r.enemy.speed)}
-          ${esStat('Combat',r.enemy.combat)}
-          ${esStat('Tough',r.enemy.tough)}
-          ${esStat('AI',r.enemy.ai+' — '+r.aiData.name)}
-          ${esStat('Panic',r.enemy.panic)}
+          ${es('Speed',r.enemy.speed)}${es('Combat',r.enemy.combat)}${es('Tough',r.enemy.tough)}${es('AI',r.enemy.ai+' — '+r.aiData.name)}${es('Panic',r.enemy.panic)}
         </div>
-        ${r.enemy.special ? `<div class="enemy-special">${r.enemy.special.split('\n').map(l=>`<div><span class="special-rule">${esc(l)}</span></div>`).join('')}</div>` : ''}
+        ${r.enemy.special?`<div class="enemy-special">${r.enemy.special.split('\n').map(l=>`<div><span class="special-rule">${esc(l)}</span></div>`).join('')}</div>`:''}
       </div>
 
       <div class="enc-grid" style="margin-top:1rem">
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Force Composition</div>
+          <div class="sec-lbl">Force Composition</div>
           <table class="data-table">
-            <tr><td>Base dice roll</td><td>${r.numOpponents - parseInt(r.enemy.numbers||0)}</td></tr>
+            <tr><td>Base dice roll</td><td>${r.numOpponents-parseInt(r.enemy.numbers||0)}</td></tr>
             <tr><td>Enemy numbers modifier</td><td>${r.enemy.numbers}</td></tr>
-            <tr><td style="color:var(--gold);font-weight:700">Total opponents</td><td style="color:var(--gold);font-weight:700">${r.numOpponents}</td></tr>
+            <tr><td style="color:var(--gold);font-weight:700">Total opponents</td><td style="color:var(--gold);font-weight:700;font-size:1.1rem">${r.numOpponents}</td></tr>
             <tr><td>Specialists</td><td>${r.specialists}</td></tr>
-            <tr><td>Lieutenant present?</td><td>${r.hasLieutenant ? '<span class="badge badge-gold">YES — +1 CS, Blade, Fearless</span>' : 'No'}</td></tr>
-            <tr><td>Unique Individual?</td><td>${r.ui ? `<span class="badge badge-gold">YES</span>` : 'No'}</td></tr>
+            <tr><td>Lieutenant</td><td>${r.hasLieutenant?'<span class="badge badge-gold">Present — +1 CS, Blade, Fearless</span>':'No'}</td></tr>
+            <tr><td>Unique Individual</td><td>${r.ui?'<span class="badge badge-gold">Present (additional figure)</span>':'No'}</td></tr>
           </table>
         </div>
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Weapons</div>
+          <div class="sec-lbl">Weapons</div>
           <table class="data-table">
             <tr><td>Weapon code</td><td style="font-family:var(--fm)">${esc(r.wpnCode)}</td></tr>
             <tr><td>Standard weapon</td><td><strong>${esc(r.mainWeapon)}${esc(r.aggressiveBlade||r.psychoBlade)}</strong></td></tr>
-            ${r.specialists>0 && r.specWeapon ? `<tr><td>Specialist weapon</td><td><strong>${esc(r.specWeapon)}</strong></td></tr>` : ''}
-            ${r.hasLieutenant ? `<tr><td>Lieutenant adds</td><td>Blade (extra)</td></tr>` : ''}
+            ${r.specialists>0&&r.specWeapon?`<tr><td>Specialist weapon</td><td><strong>${esc(r.specWeapon)}</strong></td></tr>`:''}
+            ${r.hasLieutenant?`<tr><td>Lieutenant adds</td><td>Blade (extra)</td></tr>`:''}
           </table>
-          <div style="margin-top:.75rem">
-            <div class="sec-lbl" style="margin-bottom:.3rem">AI Deployment</div>
-            <div class="badge badge-teal" style="font-size:.65rem;padding:4px 8px">${r.aiData.name}</div>
-            <div style="font-family:var(--fm);font-size:.68rem;color:var(--text2);margin-top:.4rem;line-height:1.6">${esc(r.aiData.short)}</div>
+          <div style="margin-top:.85rem">
+            <div class="sec-lbl">AI Type</div>
+            <span class="badge badge-teal">${r.aiData.name}</span>
+            <div style="font-size:.85rem;color:var(--text2);margin-top:.4rem;line-height:1.6">${esc(r.aiData.short)}</div>
           </div>
         </div>
       </div>
-
-      ${r.ui ? renderUI(r.ui) : ''}
+      ${r.ui?renderUI(r.ui):''}
     </div>
   </div>
 
-  <!-- MISSION SETUP -->
   <div class="enc-panel">
     <div class="enc-title">Mission Setup</div>
     <div class="enc-body">
       <div class="enc-grid">
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Objective</div>
-          ${r.objective ? renderObjective(r.objective) : ''}
-          ${r.rivalAttack ? renderObjective(r.rivalAttack,'Rival Attack Type') : ''}
+          <div class="sec-lbl">Objective</div>
+          ${r.objective?renderObj(r.objective):''}
+          ${r.rivalAttack?renderObj(r.rivalAttack):''}
         </div>
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Deployment Condition</div>
-          ${renderDeployment(r.depCondition)}
+          <div class="sec-lbl">Deployment Condition</div>
+          ${renderDep(r.depCondition)}
         </div>
       </div>
       <hr>
       <div class="enc-grid">
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Notable Sight</div>
+          <div class="sec-lbl">Notable Sight</div>
           ${renderSight(r.sight)}
         </div>
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Terrain Setup — ${r.tableSize} ft</div>
+          <div class="sec-lbl">Terrain Setup — ${r.tableSize} ft</div>
           ${renderTerrain(r.terrain)}
         </div>
       </div>
     </div>
   </div>
 
-  ${r.patronDetails ? renderPatronDetails(r.patronDetails) : ''}
+  ${r.patronDetails?renderPatron(r.patronDetails):''}
 
-  <!-- BATTLE REFERENCE -->
   <div class="enc-panel">
     <div class="enc-title">Quick Battle Reference</div>
     <div class="enc-body">
       <div class="enc-grid">
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Round Sequence</div>
+          <div class="sec-lbl">Round Sequence</div>
           <table class="data-table">
-            <tr><td>1. Reaction Roll</td><td style="font-family:var(--fm);font-size:.72rem">Roll Xd6 (X = crew on field). Assign dice to characters vs their Reactions score.</td></tr>
-            <tr><td>2. Quick Actions</td><td style="font-family:var(--fm);font-size:.72rem">Characters whose die ≤ Reactions score act now.</td></tr>
-            <tr><td>3. Enemy Actions</td><td style="font-family:var(--fm);font-size:.72rem">All enemies activate (closest to your edge first).</td></tr>
-            <tr><td>4. Slow Actions</td><td style="font-family:var(--fm);font-size:.72rem">Remaining characters act.</td></tr>
-            <tr><td>5. End Phase</td><td style="font-family:var(--fm);font-size:.72rem">Morale check, special events, objectives.</td></tr>
+            <tr><td>1. Reaction Roll</td><td>Roll Xd6 (X = crew on field). Assign dice to characters vs their Reactions score.</td></tr>
+            <tr><td>2. Quick Actions</td><td>Characters whose die ≤ Reactions score act now.</td></tr>
+            <tr><td>3. Enemy Actions</td><td>All enemies activate (closest to your edge first).</td></tr>
+            <tr><td>4. Slow Actions</td><td>Remaining characters act.</td></tr>
+            <tr><td>5. End Phase</td><td>Morale checks, objectives, special events.</td></tr>
           </table>
         </div>
         <div>
-          <div class="sec-lbl" style="margin-bottom:.4rem">Seize the Initiative</div>
-          <div style="font-family:var(--fm);font-size:.7rem;color:var(--text2);line-height:1.7">
-            Roll 2D6 + highest crew Savvy score.<br>
-            +1 if outnumbered.<br>
-            ${r.catName==='hired' ? '<span style="color:#e07060">-1 (Hired Muscle)</span><br>' : ''}
-            ${r.diff==='hardcore' ? '<span style="color:#e07060">-2 (Hardcore difficulty)</span><br>' : ''}
-            ${r.diff==='insanity' ? '<span style="color:#e07060">-3 (Insanity difficulty)</span><br>' : ''}
-            <strong style="color:var(--gold)">10+:</strong> Each crew may Move or Fire before Round 1 (shots only hit on natural 6).
+          <div class="sec-lbl">Seize the Initiative</div>
+          <div style="font-size:.88rem;color:var(--text2);line-height:1.7">
+            Roll 2D6 + highest crew Savvy.<br>
+            +1 if outnumbered${r.catName==='hired'?'<br><strong style="color:var(--red)">−1 (Hired Muscle)</strong>':''}.
+            ${r.diff==='hardcore'?'<br><strong style="color:var(--red)">−2 (Hardcore)</strong>':''}
+            ${r.diff==='insanity'?'<br><strong style="color:var(--red)">−3 (Insanity)</strong>':''}
+            <br><strong style="color:var(--gold)">10+:</strong> Each crew may Move or Fire before Round 1 (shots only hit on natural 6).
           </div>
-          <div style="margin-top:.75rem">
-            <div class="sec-lbl" style="margin-bottom:.3rem">Morale Check (Enemy)</div>
-            <div style="font-family:var(--fm);font-size:.7rem;color:var(--text2);line-height:1.7">
-              Roll 1D6 per casualty this round.<br>
+          <div style="margin-top:.85rem">
+            <div class="sec-lbl">Enemy Morale</div>
+            <div style="font-size:.88rem;color:var(--text2);line-height:1.7">
               Panic range: <strong style="color:var(--gold)">${esc(r.enemy.panic)}</strong><br>
-              Each die within range = 1 enemy Bails (closest to their edge first).
+              At end of each round, roll 1D6 per casualty.<br>
+              Each die within panic range = 1 enemy Bails.
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  `;
-
-  el.innerHTML=html;
-}
-
-function esStat(label,val){
-  return `<div class="es-box"><div class="es-lbl">${label}</div><div class="es-v">${esc(val)}</div></div>`;
-}
-
-function renderUI(ui){
-  return `
-  <div class="ui-block" style="margin-top:1rem">
-    <div style="font-family:var(--fm);font-size:.6rem;color:var(--gold);letter-spacing:3px;margin-bottom:.4rem">UNIQUE INDIVIDUAL (additional figure)</div>
-    <div class="ui-name">${esc(ui.name)}</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin:.5rem 0">
-      ${esStat('Speed',ui.speed)} ${esStat('Combat',ui.combat)} ${esStat('Tough',ui.tough)} ${esStat('AI',ui.ai)} ${esStat('Luck',ui.luck)}
-    </div>
-    <div style="font-family:var(--fm);font-size:.7rem;color:var(--text2)"><strong style="color:var(--gold2)">Weapon:</strong> ${esc(ui.wpn)}</div>
-    ${ui.special ? `<div style="font-family:var(--fm);font-size:.68rem;color:var(--text2);margin-top:.4rem;line-height:1.6">${esc(ui.special)}</div>` : ''}
-    <div style="font-family:var(--fm);font-size:.6rem;color:var(--text3);margin-top:.4rem">Unique Individuals are Fearless and unaffected by Morale checks.</div>
   </div>`;
 }
 
-function renderObjective(obj, overrideLabel=''){
-  return `<div class="obj-card">
-    <div class="obj-name">${esc(obj.name)}</div>
-    <div class="obj-desc">${esc(obj.desc)}</div>
-  </div>`;
+function es(l,v){return `<div class="es-box"><div class="es-lbl">${l}</div><div class="es-v">${esc(v)}</div></div>`;}
+function renderUI(ui){return `<div class="ui-block"><div style="font-family:var(--fm);font-size:.65rem;color:var(--gold);letter-spacing:3px;margin-bottom:.4rem">UNIQUE INDIVIDUAL — ADDITIONAL FIGURE</div><div class="ui-name">${esc(ui.name)}</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin:.5rem 0">${es('Speed',ui.speed)}${es('Combat',ui.combat)}${es('Tough',ui.tough)}${es('AI',ui.ai)}${es('Luck',ui.luck)}</div><div style="font-size:.88rem;color:var(--text2)"><strong style="color:var(--gold2)">Weapon:</strong> ${esc(ui.wpn)}</div>${ui.special?`<div style="font-size:.85rem;color:var(--text2);margin-top:.4rem;line-height:1.7">${esc(ui.special)}</div>`:''}<div class="ui-note">Unique Individuals are Fearless and unaffected by Morale checks.</div></div>`;}
+function renderObj(o){return `<div class="obj-card"><div class="obj-name">${esc(o.name)}</div><div class="obj-desc">${esc(o.desc)}</div></div>`;}
+function renderDep(d){if(!d.name||d.name==='No Condition')return`<div class="dep-card"><div class="dep-name" style="color:var(--text3)">No Special Condition</div><div class="dep-desc">Set up and fight normally.</div></div>`;return`<div class="dep-card"><div class="dep-name">${esc(d.name)}</div><div class="dep-desc">${esc(d.desc)}</div></div>`;}
+function renderSight(s){if(!s.name||s.name==='Nothing Special'||s.name==='No Notable Sight')return`<div class="sight-card"><div class="sight-name" style="color:var(--text3)">Nothing Special</div></div>`;return`<div class="sight-card"><div class="sight-name">${esc(s.name)}</div><div class="sight-desc">Place 2D6+2" from center in a random direction. Move into contact and forego all other actions to acquire.<br>${esc(s.desc)}</div></div>`;}
+function renderTerrain(t){return`<table class="data-table"><thead><tr><th>Type</th><th>Count</th><th>Notes</th></tr></thead><tbody><tr><td>Large features</td><td><strong style="color:var(--gold)">${t.large}</strong></td><td>Fill most of their sector. Obstruct sight, provide cover.</td></tr><tr><td>Small features</td><td><strong style="color:var(--gold)">${t.small}</strong></td><td>Clusters or individual pieces. Provide cover.</td></tr><tr><td>Linear features</td><td><strong style="color:var(--gold)">${t.linear}</strong></td><td>4–8" long barriers. Block LOS, provide cover.</td></tr></tbody></table><div style="font-size:.8rem;color:var(--text3);margin-top:.5rem">Divide table into 10–12" sectors. At least 2 climbable, 1 elevated, 1 enterable.</div>`;}
+function renderPatron(pd){return`<div class="enc-panel"><div class="enc-title">Patron Job Details</div><div class="enc-body"><div class="enc-grid-3"><div class="stat-block"><div class="stat-title">Danger Pay</div><div class="stat-val" style="font-size:1rem">${esc(pd.dangerPay.val)}</div><div class="stat-sub">Paid if attempted (unless Demanding)</div></div><div class="stat-block"><div class="stat-title">Time Frame</div><div class="stat-val" style="font-size:.9rem">${esc(pd.timeFrame)}</div></div><div>${pd.benefit?`<div class="sight-card" style="margin-bottom:.4rem"><div class="sight-name">Benefit: ${esc(pd.benefit.name)}</div><div class="sight-desc">${esc(pd.benefit.effect)}</div></div>`:''} ${pd.hazard?`<div class="dep-card" style="margin-bottom:.4rem"><div class="dep-name">Hazard: ${esc(pd.hazard.name)}</div><div class="dep-desc">${esc(pd.hazard.effect)}</div></div>`:''} ${pd.condition?`<div class="dep-card"><div class="dep-name" style="color:#b8a020">Condition: ${esc(pd.condition.name)}</div><div class="dep-desc">${esc(pd.condition.effect)}</div></div>`:''} ${!pd.benefit&&!pd.hazard&&!pd.condition?`<div style="color:var(--text3);font-size:.85rem">No special Benefits, Hazards, or Conditions.</div>`:''}</div></div></div></div>`;}
+
+// ── EXPORT PDF (client-side jsPDF) ────────────────────────────────
+function exportPDF(){
+  if(!lastResult){alert('Generate an encounter first.');return;}
+  if(typeof window.jspdf==='undefined'){alert('PDF library not loaded yet, please wait a moment and try again.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,H=297;
+  const hc=document.body.classList.contains('hc');
+  const r=lastResult;
+
+  // Colours (adapts to mode)
+  const C={
+    bg:     hc?[245,240,232]:[13,15,20],
+    surf:   hc?[237,232,224]:[19,22,30],
+    surf2:  hc?[224,219,208]:[28,32,48],
+    gold:   hc?[122,88,0]:[212,168,75],
+    gold2:  hc?[90,62,0]:[232,192,106],
+    text:   hc?[26,26,20]:[216,220,232],
+    text2:  hc?[42,40,32]:[176,184,204],
+    text3:  hc?[80,76,60]:[122,132,160],
+    teal:   hc?[0,80,80]:[46,125,122],
+    teal2:  hc?[0,56,56]:[90,184,180],
+    red:    hc?[139,0,0]:[192,57,43],
+    border: hc?[153,144,128]:[42,48,69],
+  };
+
+  const sf=(...c)=>doc.setFillColor(...c);
+  const sd=(...c)=>doc.setStrokeColor(...c);
+  const st=(...c)=>doc.setTextColor(...c);
+  const lw=(w=.3)=>doc.setLineWidth(w);
+  const R=(x,y,w,h,f,s)=>doc.rect(x,y,w,h,f&&s?'FD':f?'F':'D');
+  const L=(x1,y1,x2,y2,w=.25)=>{lw(w);sd(...C.border);doc.line(x1,y1,x2,y2);};
+  const T=(s,x,y,opts={})=>doc.text(String(s||''),x,y,opts);
+
+  function fullBg(){sf(...C.bg);R(0,0,W,H,true,false);}
+  function hdrBar(title,sub){
+    sf(...C.surf);R(0,0,W,16,true,false);
+    sd(...C.gold);lw(.8);doc.line(0,16,W,16);
+    doc.setFont('helvetica','bold');doc.setFontSize(13);st(...C.gold);T('FIVE PARSECS FROM HOME',10,9);
+    doc.setFont('helvetica','normal');doc.setFontSize(5.5);st(...C.text3);T('ENCOUNTER GENERATOR — THIRD EDITION',10,13.5);
+    doc.setFont('helvetica','bold');doc.setFontSize(9);st(...C.text);T(title,W-10,9,{align:'right'});
+    doc.setFont('helvetica','normal');doc.setFontSize(5.5);st(...C.text3);T(sub,W-10,13.5,{align:'right'});
+  }
+  function sbox(x,y,bw,bh,lbl,val,vc=C.gold){
+    sf(...C.surf2);sd(...C.border);lw(.3);R(x,y,bw,bh,true,true);
+    doc.setFont('helvetica','normal');doc.setFontSize(4.5);st(...C.text3);T(lbl.toUpperCase(),x+bw/2,y+2.8,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(9);st(...vc);T(String(val),x+bw/2,y+bh-1.5,{align:'center'});
+  }
+  function wrap(s,x,y,mw,lh=4,fs=7,fc=C.text2){
+    doc.setFontSize(fs);doc.setFont('helvetica','normal');st(...fc);
+    const lines=doc.splitTextToSize(String(s||''),mw);
+    lines.forEach((l,i)=>T(l,x,y+i*lh));
+    return y+lines.length*lh;
+  }
+  function secLabel(lbl,x,y){
+    doc.setFontSize(5.5);doc.setFont('helvetica','bold');st(...C.gold);T(lbl.toUpperCase(),x,y);
+  }
+
+  // ── PAGE 1 ──────────────────────────────────────────────────────
+  fullBg();
+  hdrBar(ML(r.mission).toUpperCase(),`${r.diff.toUpperCase()}  ·  ${r.crewSize}-FIGURE CREW  ·  ${r.tableSize} ft TABLE`);
+
+  const M=10,CG=5,CW=(W-2*M-CG)/2,C1=M,C2=M+CW+CG;
+  let y=20;
+
+  // Enemy block left col
+  sf(...C.surf);sd(...C.border);lw(.3);R(C1,y,CW,72,true,true);
+  sf(...C.surf2);R(C1,y,CW,6,true,false);
+  doc.setFont('helvetica','bold');doc.setFontSize(5.5);st(...C.gold);T('ENEMY FORCE',C1+2,y+4.2);
+  y+=7;
+  doc.setFont('helvetica','bold');doc.setFontSize(12);st(...C.text);T(String(r.enemy.name),C1+2,y+3);
+  doc.setFontSize(5);doc.setFont('helvetica','normal');st(...C.teal2);T(r.catDisplay.toUpperCase(),C1+2,y+7);
+  y+=9;
+  const stats=[['Speed',r.enemy.speed],['Combat',r.enemy.combat],['Tough',r.enemy.tough],['AI',r.enemy.ai],['Panic',r.enemy.panic]];
+  const sw=CW/5;
+  stats.forEach(([l,v],i)=>sbox(C1+i*sw,y,sw-.3,9,l,v));
+  y+=11;
+
+  // Force numbers
+  doc.setFontSize(5.5);doc.setFont('helvetica','normal');st(...C.text3);T('TOTAL OPPONENTS:',C1+2,y+2);
+  doc.setFontSize(11);doc.setFont('helvetica','bold');st(...C.gold);T(String(r.numOpponents),C1+38,y+2.5);
+  doc.setFontSize(6);st(...C.text2);T(`(${r.specialists} spec${r.specialists!==1?'s':''}${r.hasLieutenant?', Lt.':''})`,C1+46,y+2.5);
+  y+=6;
+
+  // Weapons
+  doc.setFontSize(5.5);doc.setFont('helvetica','normal');st(...C.text3);T('WEAPON:',C1+2,y+2);
+  doc.setFontSize(7);doc.setFont('helvetica','bold');st(...C.text);T(`${r.mainWeapon}${r.aggressiveBlade||r.psychoBlade}`,C1+18,y+2);
+  y+=4.5;
+  if(r.specialists>0&&r.specWeapon){
+    doc.setFontSize(5.5);doc.setFont('helvetica','normal');st(...C.text3);T('SPECIALIST:',C1+2,y+2);
+    doc.setFontSize(7);doc.setFont('helvetica','bold');st(...C.text);T(r.specWeapon,C1+22,y+2);
+    y+=4.5;
+  }
+
+  // Special rules
+  L(C1+1,y,C1+CW-1,y,.2);y+=2.5;
+  (r.enemy.special||'').split('\n').slice(0,6).forEach(line=>{
+    if(!line.trim())return;
+    doc.setFontSize(5.5);doc.setFont('helvetica','normal');st(...C.gold2);T(line.slice(0,72),C1+2,y);y+=3.5;
+  });
+
+  // Right col: mission setup
+  let ry=20;
+  sf(...C.surf);sd(...C.border);lw(.3);R(C2,ry,CW,72,true,true);
+  sf(...C.surf2);R(C2,ry,CW,6,true,false);
+  doc.setFont('helvetica','bold');doc.setFontSize(5.5);st(...C.gold);T('MISSION SETUP',C2+2,ry+4.2);
+  ry+=8;
+
+  const obj=r.objective||r.rivalAttack;
+  if(obj){
+    doc.setFont('helvetica','bold');doc.setFontSize(10);st(...C.teal2);T(String(obj.name).toUpperCase(),C2+2,ry);
+    ry+=4;ry=wrap(obj.desc,C2+2,ry,CW-4,3.8,6.5)+2;
+    L(C2+1,ry,C2+CW-1,ry,.2);ry+=2;
+  }
+
+  const dep=r.depCondition||{};
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);st(...C.red);T(`DEPLOY: ${String(dep.name||'No Condition').toUpperCase()}`,C2+2,ry);
+  ry+=4;if(dep.desc)ry=wrap(dep.desc,C2+2,ry,CW-4,3.8,6.5)+1;
+  L(C2+1,ry,C2+CW-1,ry,.2);ry+=2;
+
+  const s=r.sight||{};
+  if(s.name&&s.name!=='Nothing Special'&&s.name!=='No Notable Sight'){
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);st(...C.gold);T(`SIGHT: ${s.name.toUpperCase()}`,C2+2,ry);
+    ry+=4;ry=wrap(s.desc,C2+2,ry,CW-4,3.8,6.5)+1;
+  } else {
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);st(...C.text3);T('Notable Sight: Nothing special.',C2+2,ry);
+  }
+
+  // Terrain + patron row
+  const bot=20+72+4;
+  const hw=(W-2*M-CG)/2;
+  sf(...C.surf);sd(...C.border);lw(.3);R(M,bot,hw,28,true,true);
+  sf(...C.surf2);R(M,bot,hw,5.5,true,false);
+  doc.setFont('helvetica','bold');doc.setFontSize(5.5);st(...C.gold);T('TERRAIN — '+r.tableSize,M+2,bot+4);
+  let ty=bot+9;
+  [[r.terrain.large,'Large','Fill sector, obstruct sight'],[r.terrain.small,'Small','Clusters, provide cover'],[r.terrain.linear,'Linear','4–8" barrier, block LOS']].forEach(([n,lbl,note])=>{
+    doc.setFont('helvetica','bold');doc.setFontSize(9);st(...C.gold);T(String(n),M+2,ty);
+    doc.setFont('helvetica','bold');doc.setFontSize(6.5);st(...C.text);T(lbl,M+8,ty);
+    doc.setFont('helvetica','normal');doc.setFontSize(5.5);st(...C.text3);T(note,M+8,ty+3.5);
+    ty+=8;
+  });
+
+  if(r.patronDetails){
+    const pd=r.patronDetails;
+    sf(...C.surf);sd(...C.border);lw(.3);R(C2,bot,hw,28,true,true);
+    sf(...C.surf2);R(C2,bot,hw,5.5,true,false);
+    doc.setFont('helvetica','bold');doc.setFontSize(5.5);st(...C.gold);T('PATRON JOB DETAILS',C2+2,bot+4);
+    let py=bot+9;
+    doc.setFontSize(5.5);doc.setFont('helvetica','normal');st(...C.text3);T('Danger Pay:',C2+2,py);
+    doc.setFont('helvetica','bold');doc.setFontSize(6.5);st(...C.gold);T(pd.dangerPay.val,C2+24,py);py+=5;
+    doc.setFontSize(5.5);doc.setFont('helvetica','normal');st(...C.text3);T('Time Frame:',C2+2,py);
+    doc.setFont('helvetica','bold');doc.setFontSize(5.5);st(...C.text);T(pd.timeFrame.slice(0,38),C2+24,py);py+=5;
+    [[pd.benefit,'Benefit',C.teal2],[pd.hazard,'Hazard',C.red],[pd.condition,'Condition',C.gold2]].forEach(([item,lbl,col])=>{
+      if(item){doc.setFont('helvetica','bold');doc.setFontSize(6);st(...col);T(`${lbl}: ${item.name}`,C2+2,py);doc.setFont('helvetica','normal');doc.setFontSize(5.5);st(...C.text2);T(item.effect.slice(0,45),C2+2,py+3.2);py+=7;}
+    });
+  } else {
+    // AI reference
+    sf(...C.surf);sd(...C.border);lw(.3);R(C2,bot,hw,28,true,true);
+    sf(...C.surf2);R(C2,bot,hw,5.5,true,false);
+    doc.setFont('helvetica','bold');doc.setFontSize(5.5);st(...C.gold);T('AI DEPLOYMENT REFERENCE',C2+2,bot+4);
+    let ay=bot+9;
+    doc.setFont('helvetica','bold');doc.setFontSize(8);st(...C.teal2);T(r.aiData.name.toUpperCase(),C2+2,ay);ay+=5;
+    wrap(r.aiData.short,C2+2,ay,hw-4,3.8,6.5,C.text2);
+  }
+
+  // Battle reference strip
+  const ref=bot+32;const refh=38;
+  sf(...C.surf);sd(...C.border);lw(.3);R(M,ref,W-2*M,refh,true,true);
+  sf(...C.surf2);R(M,ref,W-2*M,5.5,true,false);
+  doc.setFont('helvetica','bold');doc.setFontSize(5.5);st(...C.gold);T('BATTLE ROUND REFERENCE',M+2,ref+4);
+  const rw=(W-2*M-8)/3;let rx=M+2;const rsy=ref+9;
+  [
+    ['Round Sequence',['1. Reaction Roll — roll Xd6, assign to crew','2. Quick Actions — die ≤ Reactions score','3. Enemy Actions — closest to your edge first','4. Slow Actions — remaining crew','5. End Phase — Morale, objectives, events']],
+    ['Seize the Initiative',['Roll 2D6 + highest crew Savvy.','+1 if outnumbered.','10+ = crew acts before Round 1 begins.','Shots only hit on natural 6 in that phase.','']],
+    ['Enemy Morale',['Panic range: '+r.enemy.panic,'Roll 1D6 per casualty each round.','Each die in panic range = 1 Bail.','Apply from closest to their edge.','Panic 0 = fight to the death.']],
+  ].forEach(([title,lines])=>{
+    doc.setFont('helvetica','bold');doc.setFontSize(6);st(...C.gold);T(title.toUpperCase(),rx,rsy);
+    lines.forEach((l,i)=>{doc.setFont('helvetica','normal');doc.setFontSize(6);st(...C.text2);T(l,rx,rsy+4+i*3.8);});
+    rx+=rw+4;
+  });
+
+  // Footer
+  doc.setFontSize(5);doc.setFont('helvetica','italic');st(...C.text3);
+  T('Five Parsecs from Home Third Edition  ·  Permission is granted to copy for personal use.',W/2,H-5,{align:'center'});
+
+  doc.save('encounter_'+String(r.enemy.name||'unknown').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.pdf');
 }
 
-function renderDeployment(dep){
-  if(!dep.name||dep.name==='No Condition') return `<div class="dep-card"><div class="dep-name" style="color:var(--text3)">No Special Condition</div><div class="dep-desc">Set up and fight normally.</div></div>`;
-  return `<div class="dep-card"><div class="dep-name">${esc(dep.name)}</div><div class="dep-desc">${esc(dep.desc)}</div></div>`;
-}
-
-function renderSight(sight){
-  if(!sight.name||sight.name==='Nothing Special'||sight.name==='Invasion — No Notable Sight') return `<div class="sight-card"><div class="sight-name" style="color:var(--text3)">Nothing Special</div></div>`;
-  return `<div class="sight-card">
-    <div class="sight-name">${esc(sight.name)}</div>
-    <div class="sight-desc">Place 2D6+2" from center in a random direction. Move into contact and forego all other actions to acquire.<br>${esc(sight.desc)}</div>
-  </div>`;
-}
-
-function renderTerrain(t){
-  return `<table class="data-table">
-    <thead><tr><th>Type</th><th>Count</th><th>Notes</th></tr></thead>
-    <tbody>
-      <tr><td>Large features</td><td><strong style="color:var(--gold)">${t.large}</strong></td><td>Fill most of their sector. Obstruct sight, provide cover.</td></tr>
-      <tr><td>Small features</td><td><strong style="color:var(--gold)">${t.small}</strong></td><td>Clusters or individual pieces. Provide cover.</td></tr>
-      <tr><td>Linear features</td><td><strong style="color:var(--gold)">${t.linear}</strong></td><td>4–8" long barriers. Block LOS, provide cover.</td></tr>
-    </tbody>
-  </table>
-  <div style="font-family:var(--fm);font-size:.65rem;color:var(--text3);margin-top:.5rem;line-height:1.6">Divide table into 10–12" sectors. At least 2 climbable, 1 elevated, 1 enterable. Avoid open kill zones.</div>`;
-}
-
-function renderPatronDetails(pd){
-  return `<div class="enc-panel">
-    <div class="enc-title">Patron Job Details</div>
-    <div class="enc-body">
-      <div class="enc-grid-3">
-        <div class="stat-block">
-          <div class="stat-title">Danger Pay</div>
-          <div class="stat-val" style="font-size:1rem">${esc(pd.dangerPay.val)}</div>
-          <div class="stat-sub">Paid if attempted (unless Demanding)</div>
-        </div>
-        <div class="stat-block">
-          <div class="stat-title">Time Frame</div>
-          <div class="stat-val" style="font-size:.9rem">${esc(pd.timeFrame)}</div>
-        </div>
-        <div>
-          ${pd.benefit ? `<div class="sight-card" style="margin-bottom:.4rem"><div class="sight-name">Benefit: ${esc(pd.benefit.name)}</div><div class="sight-desc">${esc(pd.benefit.effect)}</div></div>` : ''}
-          ${pd.hazard ? `<div class="dep-card" style="margin-bottom:.4rem"><div class="dep-name">Hazard: ${esc(pd.hazard.name)}</div><div class="dep-desc">${esc(pd.hazard.effect)}</div></div>` : ''}
-          ${pd.condition ? `<div class="dep-card"><div class="dep-name" style="color:#e0d060">Condition: ${esc(pd.condition.name)}</div><div class="dep-desc">${esc(pd.condition.effect)}</div></div>` : ''}
-          ${!pd.benefit&&!pd.hazard&&!pd.condition ? '<div style="color:var(--text3);font-family:var(--fm);font-size:.72rem">No special Benefits, Hazards, or Conditions.</div>' : ''}
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// EXPORT TXT
-// ═══════════════════════════════════════════════════════════════════
+// ── EXPORT TXT ────────────────────────────────────────────────────
 function exportTXT(){
   if(!lastResult){alert('Generate an encounter first.');return;}
   const r=lastResult;
-  const sep='═'.repeat(62);
-  const thin='─'.repeat(62);
+  const sep='═'.repeat(60);const thin='─'.repeat(60);
   const lines=[
-    'FIVE PARSECS FROM HOME — ENCOUNTER SHEET',
-    sep,
-    `Mission Type:   ${missionLabel(r.mission)}`,
-    `Difficulty:     ${r.diff.toUpperCase()}`,
-    `Crew in Field:  ${r.crewSize}`,
-    `Table Size:     ${r.tableSize} feet`,
-    '',
-    '  ENEMY FORCE',
-    thin,
+    'FIVE PARSECS FROM HOME — ENCOUNTER SHEET',sep,
+    `Mission Type:   ${ML(r.mission)}`,`Difficulty:     ${r.diff.toUpperCase()}`,
+    `Crew in Field:  ${r.crewSize}`,`Table Size:     ${r.tableSize} feet`,'',
+    '  ENEMY FORCE',thin,
     `  Type:         ${r.enemy.name}  [${r.catDisplay}]`,
     `  Speed:        ${r.enemy.speed}   Combat: ${r.enemy.combat}   Toughness: ${r.enemy.tough}`,
     `  AI:           ${r.aiData.name} (${r.enemy.ai})   Panic: ${r.enemy.panic}`,
     `  Opponents:    ${r.numOpponents} total (${r.specialists} Specialist${r.specialists!==1?'s':''})`,
-    `  Lieutenant:   ${r.hasLieutenant ? 'Present (+1 CS, Blade, Fearless)' : 'Absent'}`,
+    `  Lieutenant:   ${r.hasLieutenant?'Present (+1 CS, Blade, Fearless)':'Absent'}`,
     `  Weapon code:  ${r.wpnCode}`,
     `  Main weapon:  ${r.mainWeapon}${r.aggressiveBlade||r.psychoBlade}`,
-    r.specialists>0&&r.specWeapon ? `  Spec weapon:  ${r.specWeapon}` : '',
-    '',
-    '  SPECIAL RULES',
+    r.specialists>0&&r.specWeapon?`  Spec weapon:  ${r.specWeapon}`:'',
+    '','  SPECIAL RULES',
     ...(r.enemy.special||'').split('\n').map(l=>`  ${l}`),
   ];
-  if(r.ui){
-    lines.push('','  UNIQUE INDIVIDUAL',thin,
-      `  ${r.ui.name}`,
-      `  Speed: ${r.ui.speed}   Combat: ${r.ui.combat}   Toughness: ${r.ui.tough}   AI: ${r.ui.ai}   Luck: ${r.ui.luck}`,
-      `  Weapon: ${r.ui.wpn}`,
-      ...(r.ui.special||'').split('\n').map(l=>`  ${l}`));
-  }
+  if(r.ui)lines.push('','  UNIQUE INDIVIDUAL',thin,`  ${r.ui.name}`,`  Speed: ${r.ui.speed}   Combat: ${r.ui.combat}   Toughness: ${r.ui.tough}   AI: ${r.ui.ai}   Luck: ${r.ui.luck}`,`  Weapon: ${r.ui.wpn}`,...(r.ui.special||'').split('\n').map(l=>`  ${l}`));
   lines.push('','  MISSION SETUP',thin);
-  if(r.objective) lines.push(`  Objective:    ${r.objective.name}`,`                ${r.objective.desc}`);
-  if(r.rivalAttack) lines.push(`  Rival Attack: ${r.rivalAttack.name}`,`                ${r.rivalAttack.desc}`);
+  if(r.objective)lines.push(`  Objective:    ${r.objective.name}`,`                ${r.objective.desc}`);
+  if(r.rivalAttack)lines.push(`  Rival Attack: ${r.rivalAttack.name}`,`                ${r.rivalAttack.desc}`);
   lines.push(`  Deploy Cond:  ${r.depCondition.name}`,r.depCondition.desc?`                ${r.depCondition.desc}`:'');
   lines.push(`  Notable Sight:${r.sight.name}`,r.sight.desc?`                ${r.sight.desc}`:'');
   lines.push('','  TERRAIN',`  Large: ${r.terrain.large}   Small: ${r.terrain.small}   Linear: ${r.terrain.linear}`);
-  if(r.patronDetails){
-    const pd=r.patronDetails;
-    lines.push('','  PATRON JOB DETAILS',thin,
-      `  Danger Pay:   ${pd.dangerPay.val}`,
-      `  Time Frame:   ${pd.timeFrame}`,
-      pd.benefit  ? `  Benefit:      ${pd.benefit.name} — ${pd.benefit.effect}` : '  Benefit:      None',
-      pd.hazard   ? `  Hazard:       ${pd.hazard.name} — ${pd.hazard.effect}` : '  Hazard:       None',
-      pd.condition? `  Condition:    ${pd.condition.name} — ${pd.condition.effect}` : '  Condition:    None',
-    );
-  }
-  lines.push('','  SEIZE THE INITIATIVE','  Roll 2D6 + highest Savvy. 10+ = crew acts before Round 1 (shots hit on natural 6 only).');
-  lines.push('','  MORALE',`  Enemy Panic Range: ${r.enemy.panic}. Roll 1D6 per casualty each round. Dice within range = Bail (from closest to their edge).`);
-  lines.push('',sep);
-
+  if(r.patronDetails){const pd=r.patronDetails;lines.push('','  PATRON JOB DETAILS',thin,`  Danger Pay:   ${pd.dangerPay.val}`,`  Time Frame:   ${pd.timeFrame}`,pd.benefit?`  Benefit:      ${pd.benefit.name} — ${pd.benefit.effect}`:'  Benefit:      None',pd.hazard?`  Hazard:       ${pd.hazard.name} — ${pd.hazard.effect}`:'  Hazard:       None',pd.condition?`  Condition:    ${pd.condition.name} — ${pd.condition.effect}`:'  Condition:    None');}
+  lines.push('','  SEIZE THE INITIATIVE','  Roll 2D6 + highest Savvy. 10+ = crew acts before Round 1 (shots hit on 6 only).');
+  lines.push('','  MORALE',`  Enemy Panic Range: ${r.enemy.panic}. Roll 1D6 per casualty each round. Bail from closest to enemy edge.`,'',sep);
   const blob=new Blob([lines.filter(l=>l!==undefined).join('\n')],{type:'text/plain'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='encounter_'+r.enemy.name.replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.txt';
-  a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='encounter_'+String(r.enemy.name||'unknown').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.txt';a.click();
 }
 </script>
 </body>
